@@ -1,0 +1,39 @@
+cd mysql-bpmsuite
+sudo docker build -t mysql_bpmsuite .
+sudo docker run -d --name="mysql_bpmsuite" mysql_bpmsuite
+
+. identify PID of mysql_bpmsuite container
++
+-----
+sudo docker inspect --format '{{ .State.Pid }}' mysql_bpmsuite
+29127
+-----
+
+. enter the mysql_bpmsuite container using the PID
++
+-----
+sudo nsenter -m -u -n -i -p -t 29127 /bin/bash 
+[root@ed4f818f74b4 /]#
+------
+
+. log into the mysql RDBMS and view the tables in the jbpm database
++
+-----
+sudo nsenter -m -u -n -i -p -t 8908 /bin/bash
+[root@ed4f818f74b4 /]# mysql -u jbpm -p jbpm
+MariaDB [jbpm]> show tables;
+-----
+
+. get the ip address of the `mysql_bpmsuite` container
++
+-----
+sudo docker inspect mysql_bpmsuite | grep IPAddress | cut -d '"' -f 4
+172.17.0.20
+-----
+
+. start the xpaas_bpmsuite container using the connection URL to the jbpm database of the mysql_bpmsuite container
++
+-----
+sudo ./start.sh -c xpaas_bpmsuite -d "mysql" -url "jdbc:mysql://172.17.0.20:3306/jbpm" -user jbpm -password jbpm
+-----
+
