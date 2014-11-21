@@ -37,3 +37,36 @@ sudo docker inspect mysql_bpmsuite | grep IPAddress | cut -d '"' -f 4
 sudo ./start.sh -c xpaas_bpmsuite -d "mysql" -url "jdbc:mysql://172.17.0.20:3306/jbpm" -user jbpm -password jbpm
 -----
 
+
+== Issues
+
+. Needed system properties
+.. jbpm.audit.jms.enabled
+.. jbpm.audit.jms.transacted
+.. jbpm.audit.jms.connection.factory
+.. jbpm.audit.jms.queue
+.. jbpm.audit.jms.connection.factory.jndi
+.. jbpm.audit.jms.queue.jndi
+.. org.quartz.properties
+.. org.uberfire.nio.git.dir
+.. org.uberfire.nio.git.daemon.enabled
+.. org.uberfire.nio.git.daemon.hostname     :   should be set to automatically bind to host of BPM container by default
+.. org.uberfire.nio.git.daemon.port         :   should be automatically exposed to remote clients
+.. org.uberfire.nio.git.ssh.enabled
+.. org.uberfire.nio.git.ssh.hostname        :   should be set to automatically bind to host of BPM container by default
+.. org.uberfire.nio.git.ssh.port            :   should be automatically exposed to remote clients
+.. org.uberfire.nio.git.ssh.cert.dir
+.. org.guvnor.m2repo.dir
+.. org.uberfire.metadata.index.dir
+
+. How to modify a System property after initial container start
++
+ie:  URL of jbpm mysql database changes.
+How, could the value of `jboss.bpms.connection_url` be modified in an existing container.
+Maybe modification of system properties after initial start-up is not recommended ?
+Maybe its preferred to delete that container and start a new one with the updated system properties.
+If so, any state used by the BPM container would need to reside external; ie; process/bam database; .niogit; artifact repository; lucene indexes, etc
+
+. Would be nice to:  su - jboss
+.. Thus, need to change entry in /etc/passwd
+
