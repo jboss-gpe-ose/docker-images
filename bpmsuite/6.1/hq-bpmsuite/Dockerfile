@@ -3,17 +3,16 @@ FROM docker-registry.usersys.redhat.com/goldmann/jboss-eap:6.3
 # Perform updates
 RUN yum -y update; yum clean all
 
+# Pull supervisor package from EPEL
+RUN rpm -ivh http://mirror.symnds.com/distributions/fedora-epel/7/x86_64/e/epel-release-7-2.noarch.rpm
+RUN yum install --enablerepo=rhel-7-server-rpms -y supervisor
+RUN rpm -e epel-release
+
 # Install supervisor
 RUN yum -y install supervisor; yum clean all
 
 # Create directories for supervisor
 RUN mkdir -p /var/run/supervisord
-
-# Create user jboss
-RUN mkdir -p /opt/jboss
-
-# Install java, unzip
-RUN yum -y install java-1.7.0-openjdk-devel unzip; yum clean all
 
 # Add scripts and resources
 ADD ./configure-eap.sh /configure-eap.sh
