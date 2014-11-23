@@ -1,3 +1,8 @@
+== cluster-data-bpmsuite
+
+docker build -t cluster-data-bpmsuite .
+docker run -d cluster-data-bpmsuite
+
 == mysql-bpmsuite
 
 . cd mysql-bpmsuite
@@ -33,15 +38,13 @@ docker inspect mysql-bpmsuite | grep IPAddress | cut -d '"' -f 4
 172.17.0.20
 -----
 
+== xpaas_bpmsuite
+
 . start the xpaas_bpmsuite container using the connection URL to the jbpm database of the mysql-bpmsuite container
 +
 -----
 ./start.sh -c xpaas_bpmsuite -d "mysql" -url "jdbc:mysql://172.17.0.20:3306/jbpm" -user jbpm -password jbpm
 -----
-
-== cluster-data-bpmsuite
-
-docker build -t cluster-data-bpmsuite .
 
 == Issues
 
