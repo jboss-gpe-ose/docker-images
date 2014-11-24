@@ -1,7 +1,7 @@
-== cluster-data-bpmsuite
+== shared-bpmsuite
 
-docker build -t cluster-data-bpmsuite .
-docker run -d cluster-data-bpmsuite
+docker build -t shared-bpmsuite .
+docker run -d shared-bpmsuite
 
 == mysql-bpmsuite
 
