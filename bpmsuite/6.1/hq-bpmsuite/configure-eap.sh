@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. env.sh
+. /env.sh
 
 if [ ! -d $SERVER_INSTALL_DIR/$SERVER_NAME ]
 then
