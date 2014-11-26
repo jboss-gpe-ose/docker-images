@@ -3,23 +3,16 @@ FROM rhel7
 # Perform updates
 RUN yum -y update; yum clean all
 
-# Install supervisor
-RUN yum -y install supervisor; yum clean all
-
-# Create directories for supervisor
-RUN mkdir -p /var/run/supervisord
-
-# Create user jboss
-RUN groupadd -r jboss -g 400 && useradd -u 400 -r -g jboss -d /opt/jboss -s /bin/bash -c "JBoss user" jboss
-RUN mkdir -p /opt/jboss/hq-journal
-RUN mkdir -p /opt/jgroups/hq-cluster-discovery
+# Create user jboss (with Ids that match that of jboss user created in:  docker-registry.usersys.redhat.com/goldmann/jboss-eap:6.3)
+RUN groupadd -r jboss -g 1000 && useradd -u 1000 -r -g jboss -d /opt/jboss -s /bin/bash -c "JBoss user" jboss
+RUN mkdir -p /opt/shared/hq-journal
+RUN mkdir -p /opt/shared/hq-cluster-discovery
 
 # Change permissions to user jboss
-RUN chown -R jboss:jboss /opt/jboss
-RUN chown -R jboss:jboss /opt/jgroups
+RUN chown -R jboss:jboss /opt/shared
 
 # Mount as volume
-VOLUME /opt/jboss/hq-journal
-VOLUME /opt/jgroups/hq-cluster-discovery
+VOLUME /opt/shared/hq-journal
+VOLUME /opt/shared/hq-cluster-discovery
 
 CMD true

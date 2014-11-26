@@ -13,32 +13,38 @@ RUN rpm -e epel-release
 # Install supervisor
 RUN yum -y install supervisor; yum clean all
 
-# Create directories for supervisor
+# Create directories for supervisor and configuration
 RUN mkdir -p /var/run/supervisord
+RUN mkdir -p /opt/hq-bpmsuite/config
 
 # Add scripts
-ADD ./configure-eap.sh /configure-eap.sh
-ADD ./create-queues.sh /create-queues.sh
-ADD ./env.sh /env.sh
-ADD ./copy-env.sh /copy-env.sh
-ADD ./start-container.sh /start-container.sh
+ADD ./configure-eap.sh /opt/hq-bpmsuite/config/configure-eap.sh
+ADD ./create-queues.sh /opt/hq-bpmsuite/config/create-queues.sh
+ADD ./env.sh /opt/hq-bpmsuite/config/env.sh
+ADD ./copy-env.sh /opt/hq-bpmsuite/config/copy-env.sh
+ADD ./start-container.sh /opt/hq-bpmsuite/config/start-container.sh
+ADD ./start-eap.sh /opt/hq-bpmsuite/config/start-eap.sh
+ADD ./stop-eap.sh /opt/hq-bpmsuite/config/stop-eap.sh
+ADD ./configure-hornetq.cli /opt/hq-bpmsuite/config/configure-hornetq.cli
+ADD ./create-queues.cli /opt/hq-bpmsuite/config/create-queues.cli
+ADD ./configure-jgroups.cli /opt/hq-bpmsuite/config/configure-jgroups.cli
+ADD ./configure-eap.cli /opt/hq-bpmsuite/config/configure-eap.cli
 ADD ./supervisord.conf /etc/supervisord.conf
-ADD ./start-eap.sh /start-eap.sh
-ADD ./stop-eap.sh /stop-eap.sh
-ADD ./configure-hornetq.cli /configure-hornetq.cli
-ADD ./create-queues.cli /create-queues.cli
 
 # Set script permissions
-RUN chmod 755 /start-container.sh /env.sh /copy-env.sh /start-eap.sh /stop-eap.sh /configure-eap.sh /create-queues.sh /configure-hornetq.cli /create-queues.cli
+RUN chmod 755 /opt/hq-bpmsuite/config/*
 
 # Configure EAP
-RUN /configure-eap.sh
+RUN /opt/hq-bpmsuite/config/configure-eap.sh
 
 # Create Queues
-RUN /create-queues.sh
+RUN /opt/hq-bpmsuite/config/create-queues.sh
+
+# Assign a shell to jboss user so as to allow switching to this user
+RUN usermod -s /bin/bash jboss
 
 # Expose port 8080,9990,9999
 EXPOSE 8080 9990 9999
 
 # Entrypoint
-ENTRYPOINT ["/bin/bash", "/start-container.sh"]
+ENTRYPOINT ["/bin/bash", "/opt/hq-bpmsuite/config/start-container.sh"]

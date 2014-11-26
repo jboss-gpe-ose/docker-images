@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. /env.sh
+. /opt/hq-bpmsuite/config/env.sh
 
 if [ ! -d $SERVER_INSTALL_DIR/$SERVER_NAME ]
 then
