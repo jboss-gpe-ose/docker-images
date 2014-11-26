@@ -7,13 +7,27 @@ batch
 /socket-binding-group=standard-sockets/socket-binding=messaging-backup:add(port=5545)
 /subsystem=messaging/hornetq-server=default:remove
 /subsystem=messaging/hornetq-server=default:add
+
+# will set backup to true for all brokers
+# even for the initial live broker in a cluster, this won't be a problem
+# this initial broker will still go live and log the following :
+#    HQ222137: Unable to announce backup, retrying
+#    Error announcing backup: backupServerLocator is null.
+/subsystem=messaging/hornetq-server=default:write-attribute(name=backup,value=true)
+
+# ensure that backup broker wakes up if live broker goes dies on normal shutdown of container
+/subsystem=messaging/hornetq-server=default:write-attribute(name=failover-on-shutdown,value=false)
+
+# no need to always return to the original live broker
+/subsystem=messaging/hornetq-server=default:write-attribute(name=allow-failback,value=false)
+
+# will use shared storage rather than replication failover mode
+/subsystem=messaging/hornetq-server=default:write-attribute(name=shared-store,value=true)
+
 /subsystem=messaging/hornetq-server=default:write-attribute(name=persistence-enabled,value=true)
 /subsystem=messaging/hornetq-server=default:write-attribute(name=clustered,value=true)
 /subsystem=messaging/hornetq-server=default:write-attribute(name=cluster-password,value=mycluster)
 /subsystem=messaging/hornetq-server=default:write-attribute(name=message-counter-enabled,value=true)
-/subsystem=messaging/hornetq-server=default:write-attribute(name=shared-store,value=true)
-/subsystem=messaging/hornetq-server=default:write-attribute(name=failover-on-shutdown,value=false)
-/subsystem=messaging/hornetq-server=default:write-attribute(name=allow-failback,value=true)
 /subsystem=messaging/hornetq-server=default:write-attribute(name=journal-type,value=NIO)
 /subsystem=messaging/hornetq-server=default:write-attribute(name=journal-min-files,value=2)
 /subsystem=messaging/hornetq-server=default/path=journal-directory:add(path="@@HQ_SHARED_JOURNAL_DIR@@/journal")
