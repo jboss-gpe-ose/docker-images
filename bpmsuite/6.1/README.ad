@@ -1,14 +1,32 @@
-== shared-bpmsuite
+== Build the bpm xpaas images
 
-docker build -t shared-bpmsuite .
-docker run -d shared-bpmsuite
+. docker build -t storage-bpmsuite storage-bpmsuite
+. docker build -t hq-bpmsuite hq-bpmsuite
+. docker build -t mysql-bpmsuite mysql-bpmsuite
+
+== storage-bpmsuite
+
+. docker run -d --name="storage-bpmsuite" storage-bpmsuite
+
+== hq-bpmsuite
+
+. docker run -d --name="hq0-bpmsuite" --volumes-from=storage-bpmsuite hq-bpmsuite
+. docker run -d --name="hq1-bpmsuite" --volumes-from=storage-bpmsuite hq-bpmsuite
+. identify PID of hq0-bpmsuite container
++
+-----
+docker inspect --format '{{ .State.Pid }}' hq1-bpmsuite
+8034
+-----
+
+. log into the hq0-bpmsuite container
++
+-----
+nsenter -m -u -n -i -p -t 8034 /bin/bash
 
 == mysql-bpmsuite
 
-. cd mysql-bpmsuite
-. docker build -t mysql-bpmsuite .
 . docker run -d --name="mysql-bpmsuite" mysql-bpmsuite
-
 . identify PID of mysql-bpmsuite container
 +
 -----
@@ -16,17 +34,10 @@ docker inspect --format '{{ .State.Pid }}' mysql-bpmsuite
 29127
 -----
 
-. enter the mysql-bpmsuite container using the PID
-+
------
-nsenter -m -u -n -i -p -t 29127 /bin/bash 
-[root@ed4f818f74b4 /]#
-------
-
 . log into the mysql RDBMS and view the tables in the jbpm database
 +
 -----
-nsenter -m -u -n -i -p -t 8908 /bin/bash
+nsenter -m -u -n -i -p -t 29127 /bin/bash
 [root@ed4f818f74b4 /]# mysql -u jbpm -p jbpm
 MariaDB [jbpm]> show tables;
 -----

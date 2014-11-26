@@ -1,5 +1,6 @@
 batch
-/subsystem=messaging/hornetq-server=default/jms-queue=test:add(durable=true,entries=["java:jboss/exported/jms/queue/test","java:/jms/queue/test"])
-/subsystem=messaging/hornetq-server=default/jms-queue=MessageServiceQueue:add(durable=true,entries=[java:/jms/queue/MessageServiceQueue,java:jboss/exported/jms/queue/MessageService])
-/subsystem=messaging/hornetq-server=default/jms-queue=AuditLogServiceQueue:add(durable=true,entries=[java:/jms/queue/AuditLogService,java:jboss/exported/jms/queue/AuditLogService])
+/subsystem=messaging/hornetq-server=default/jms-queue=KIE.SESSION:add(durable=true,entries=[queue/KIE.SESSION.ALL,java:jboss/exported/jms/queue/KIE.SESSION])
+/subsystem=messaging/hornetq-server=default/jms-queue=KIE.TASK:add(durable=true,entries=[queue/KIE.TASK.ALL,java:jboss/exported/jms/queue/KIE.TASK])
+/subsystem=messaging/hornetq-server=default/jms-queue=KIE.RESPONSE:add(durable=true,entries=[queue/KIE.RESPONSE.ALL,java:jboss/exported/jms/queue/KIE.RESPONSE])
+/subsystem=messaging/hornetq-server=default/jms-queue=KIE.AUDIT:add(durable=true,entries=[queue/KIE.AUDIT.ALL,java:jboss/exported/jms/queue/KIE.AUDIT])
 run-batch
