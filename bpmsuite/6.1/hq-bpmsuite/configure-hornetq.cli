@@ -20,6 +20,9 @@ batch
 # will use shared storage rather than replication failover mode
 /subsystem=messaging/hornetq-server=default:write-attribute(name=shared-store,value=true)
 
+# disable authentication requirements by default
+/subsystem=messaging/hornetq-server=default/:write-attribute(name=security-enabled,value=false)
+
 /subsystem=messaging/hornetq-server=default:write-attribute(name=persistence-enabled,value=true)
 /subsystem=messaging/hornetq-server=default:write-attribute(name=clustered,value=true)
 /subsystem=messaging/hornetq-server=default:write-attribute(name=cluster-password,value=mycluster)
@@ -70,6 +73,7 @@ batch
 /subsystem=messaging/hornetq-server=backup:write-attribute(name=persistence-enabled,value=true)
 /subsystem=messaging/hornetq-server=backup:write-attribute(name=shared-store,value=true)
 /subsystem=messaging/hornetq-server=backup:write-attribute(name=failover-on-shutdown,value=false)
+/subsystem=messaging/hornetq-server=backup:write-attribute(name=security-enabled,value=false)
 /subsystem=messaging/hornetq-server=backup:write-attribute(name=allow-failback,value=true)
 /subsystem=messaging/hornetq-server=backup:write-attribute(name=journal-type,value=NIO)
 /subsystem=messaging/hornetq-server=backup:write-attribute(name=journal-min-files,value=2)
