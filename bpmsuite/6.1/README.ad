@@ -10,8 +10,8 @@
 
 == hq-bpmsuite
 
-. docker run -d --name="hq0-bpmsuite" --volumes-from=storage-bpmsuite hq-bpmsuite
-. docker run -d --name="hq1-bpmsuite" --volumes-from=storage-bpmsuite hq-bpmsuite
+. docker run -d --name="hq0-bpmsuite" -e HORNETQ_NODE=hornetq0 -e HORNETQ_BACKUP_NODE=hornetq1 --volumes-from=storage-bpmsuite hq-bpmsuite
+. docker run -d --name="hq1-bpmsuite" -e HORNETQ_NODE=hornetq1 -e HORNETQ_BACKUP_NODE=hornetq0 --volumes-from=storage-bpmsuite hq-bpmsuite
 . identify PID of hq0-bpmsuite container
 +
 -----

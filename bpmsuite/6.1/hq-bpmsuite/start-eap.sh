@@ -6,6 +6,8 @@
 IPADDR=$(ip a s | sed -ne '/127.0.0.1/!{s/^[ \t]*inet[ \t]*\([0-9.]\+\)\/.*$/\1/p}')
 
 echo "IPADDR = $IPADDR"
+echo "HornetQ node = $HORNETQ_NODE"
+echo "HornetQ backup node = $HORNETQ_BACKUP_NODE"
 
 # Sanity checks
 if [ ! -d $SERVER_INSTALL_DIR/$SERVER_NAME ]
@@ -44,6 +46,6 @@ JAVA_OPTS="-Xms128m -Xmx512m -XX:MaxPermSize=256m -Djava.net.preferIPv4Stack=tru
 export JAVA_OPTS
 
 # start jboss hornetq
-nohup ${SERVER_INSTALL_DIR}/${SERVER_NAME}/bin/standalone.sh -Djboss.bind.address=$IPADDR -Djboss.bind.address.management=$IPADDR -Djboss.bind.address.insecure=$IPADDR -Djboss.node.name=server-$IPADDR --server-config=$JBOSS_CONFIG $ADMIN_ONLY &> /tmp/eap_out.log &
+nohup ${SERVER_INSTALL_DIR}/${SERVER_NAME}/bin/standalone.sh -Djboss.bind.address=$IPADDR -Djboss.bind.address.management=$IPADDR -Djboss.bind.address.insecure=$IPADDR -Djboss.node.name=server-$IPADDR -Dhornetq.node=$HORNETQ_NODE -Dhornetq.backup.node=$HORNETQ_BACKUP_NODE --server-config=$JBOSS_CONFIG $ADMIN_ONLY &> /tmp/eap_out.log &
 EOF
 echo "EAP started"
