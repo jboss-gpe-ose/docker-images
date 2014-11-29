@@ -1,0 +1,6 @@
+batch
+
+/subsystem=modcluster:remove
+/subsystem=cmp:remove
+
+run-batch
