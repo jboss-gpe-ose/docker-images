@@ -16,6 +16,7 @@
 #                                   If not specified, defaults to "sa"
 # -password | --connection-password:    The BPMS database connection password 
 #                                       If not specified, defaults to "sa"
+# -useRemoteHQ :  Will connect to remote HQ broker rather than use embedded HQ
 # -h | --help;              Show the script usage
 #
 
@@ -26,6 +27,7 @@ CONNECTION_DRIVER=h2
 CONNECTION_URL="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 CONNECTION_USERNAME=SA
 CONNECTION_PASSWORD=SA
+
 
 function usage
 {
@@ -48,6 +50,9 @@ while [ "$1" != "" ]; do
                                 ;;
         -password | --connection-password )  shift
                                 CONNECTION_PASSWORD=$1
+                                ;;
+        -useRemoteHQ )  shift
+                                USE_REMOTE_HQ_BROKERS=TRUE
                                 ;;
         -h | --help )           usage
                                 exit
@@ -74,7 +79,13 @@ echo "** BPMS connection driver: $CONNECTION_DRIVER"
 echo "** BPMS connection URL: $CONNECTION_URL"
 echo "** BPMS connection username: $CONNECTION_USERNAME"
 echo "** BPMS connection password: $CONNECTION_PASSWORD"
-image_xpaas_bpmsuite=$(docker run -P -d --name $CONTAINER_NAME -e BPMS_CONNECTION_URL="$CONNECTION_URL" -e BPMS_CONNECTION_DRIVER="$CONNECTION_DRIVER" -e BPMS_CONNECTION_USER="$CONNECTION_USERNAME" -e BPMS_CONNECTION_PASSWORD="$CONNECTION_PASSWORD" $IMAGE_NAME:$IMAGE_TAG)
+echo "** USE_REMOTE_HQ_BROKERS: $USE_REMOTE_HQ_BROKERS"
+
+if [[ -z $USE_REMOTE_HQ_BROKERS ]]; then
+  image_xpaas_bpmsuite=$(docker run -P -d --name $CONTAINER_NAME -e BPMS_CONNECTION_URL="$CONNECTION_URL" -e BPMS_CONNECTION_DRIVER="$CONNECTION_DRIVER" -e BPMS_CONNECTION_USER="$CONNECTION_USERNAME" -e BPMS_CONNECTION_PASSWORD="$CONNECTION_PASSWORD" --link="hq0-bpmsuite:hq0" $IMAGE_NAME:$IMAGE_TAG)
+else
+  image_xpaas_bpmsuite=$(docker run -P -d --name $CONTAINER_NAME -e BPMS_CONNECTION_URL="$CONNECTION_URL" -e BPMS_CONNECTION_DRIVER="$CONNECTION_DRIVER" -e BPMS_CONNECTION_USER="$CONNECTION_USERNAME" -e BPMS_CONNECTION_PASSWORD="$CONNECTION_PASSWORD" $IMAGE_NAME:$IMAGE_TAG)
+fi
 ip_bpmsuite=$(docker inspect $image_xpaas_bpmsuite | grep IPAddress | awk '{print $2}' | tr -d '",')
 echo $image_xpaas_bpmsuite > docker.pid
 

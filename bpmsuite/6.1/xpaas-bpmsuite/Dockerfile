@@ -67,8 +67,10 @@ ADD etc/bpms-users.properties /opt/jboss/eap/standalone/configuration/bpms-users
 ADD etc/bpms-roles.properties /opt/jboss/eap/standalone/configuration/bpms-roles.properties
 ADD etc/persistence.xml.template /opt/jboss/eap/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
 ADD etc/quartz-db.properties /opt/jboss/bpms/quartz-db.properties
+ADD etc/use_remote_hq_broker.cli /opt/jboss/bpms/use_remote_hq_broker.cli
 USER root
 RUN chown jboss:jboss /opt/jboss/bpms/start-bpms.sh; \ 
+chown jboss:jboss /opt/jboss/bpms/use_remote_hq_broker.cli; \
 chown jboss:jboss /opt/jboss/eap/standalone/configuration/standalone-full-ha.xml.template; \ 
 chown jboss:jboss /opt/jboss/eap/standalone/configuration/bpms-users.properties; \ 
 chown jboss:jboss /opt/jboss/eap/standalone/configuration/bpms-roles.properties; \ 

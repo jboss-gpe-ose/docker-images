@@ -94,6 +94,28 @@ if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
 fi
 
 # *******************
+# OPTIONAL REMOTE MESSAGING BROKER
+if [[ -z "$HQ0_PORT_5445_TCP_ADDR" ]]; then
+    echo -en "\nhq0-bpmsuite container has been linked.  Will use this remote HQ broker\n"
+    echo -en "\nhornetq.remote.address = $HQ0_PORT_5445_TCP_ADDR ; hornetq.remote.port = $HQ0_PORT_5445_TCP_PORT\n"
+
+    # create REMOTE_MESSAGING_ARGUMENTS variable to be passed to jboss eap startup
+    REMOTE_MESSAGING_ARGUMENTS="-Dhornetq.remote.address=$HORNETQ_REMOTE_ADDRESS -Dhornetq.remote.port=$HORNETQ_REMOTE_PORT"
+
+    # start eap in admin-only mode
+    /opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml --admin-only &
+    sleep 15
+
+    # execute the CLI that tunes the messaging subsystem
+    /opt/jboss/eap/bin/jboss-cli.sh --connect --controller $DOCKER_IP --file=/opt/jboss/bpms/use_remote_hq_broker.cli
+    /opt/jboss/eap/bin/jboss-cli.sh --connect --controller $DOCKER_IP ":shutdown"
+
+    # remove orignal config that defines KIE related queues
+    rm /opt/jboss/eap/standalone/deployments/business-central.war/WEB-INF/bpms-jms.xml
+fi
+# *******************
+
+# *******************
 # RUNNING BPMS Server
 # *******************
 # Boot EAP with BPMS in standalone mode by default
@@ -111,4 +133,4 @@ echo "Using as JBoss BPMS connection arguments: $JBOSS_BPMS_DB_ARGUMENTS"
 if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
     echo "Using as JBoss BPMS cluster arguments: $JBOSS_BPMS_CLUSTER_ARGUMENTS"
 fi
-/opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS
+/opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS
