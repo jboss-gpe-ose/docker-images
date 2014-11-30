@@ -51,16 +51,18 @@ docker inspect mysql-bpmsuite | grep IPAddress | cut -d '"' -f 4
 
 == xpaas_bpmsuite
 
-. start the xpaas-bpmsuite container using the connection URL to the jbpm database of the mysql-bpmsuite container
+. start the xpaas-bpmsuite container using the connection URL to a remote non-containerized mysql jbpm database:
 +
 -----
 ./start.sh -d "mysql" -url "jdbc:mysql://172.17.0.20:3306/jbpm" -user jbpm -password jbpm
 -----
 
-. start the xpaas-bpmsuite container using the connection URL to the jbpm database of the mysql-bpmsuite container
+. start the xpaas-bpmsuite container : 
+.. Linked to the `mysql-bpmsuite` container
+.. Linked to the `hq0-bpmsuite` container
 +
 -----
-./start.sh -d "mysql" -url "jdbc:mysql://172.17.0.20:3306/jbpm" -user jbpm -password jbpm -useRemoteHQ
+./start.sh -useRemoteHQ -useLinkedMySQL
 -----
 
 

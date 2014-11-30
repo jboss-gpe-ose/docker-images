@@ -31,7 +31,7 @@ CONNECTION_PASSWORD=SA
 
 function usage
 {
-     echo "usage: start.sh [ [-c <container_name> ] ] [-h]]"
+     echo "usage: start.sh [ [-c <container_name> ] ] [-h] [-useRemoteHQ] [-useLinkedMySQL] ]"
 }
 
 while [ "$1" != "" ]; do
@@ -51,14 +51,17 @@ while [ "$1" != "" ]; do
         -password | --connection-password )  shift
                                 CONNECTION_PASSWORD=$1
                                 ;;
-        -useRemoteHQ )  shift
+        -useRemoteHQ )
                                 USE_REMOTE_HQ_BROKERS=TRUE
+                                ;;
+        -useLinkedMySQL ) 
+                                USE_LINKED_MYSQL=TRUE
                                 ;;
         -h | --help )           usage
                                 exit
                                 ;;
-        * )                     usage
-                                exit 1
+	* )			usage
+				exit 1
     esac
     shift
 done
@@ -75,24 +78,39 @@ fi
 # Start the xpaas docker container
 echo "Starting $CONTAINER_NAME docker container using:"
 echo "** Container name: $CONTAINER_NAME"
-echo "** BPMS connection driver: $CONNECTION_DRIVER"
-echo "** BPMS connection URL: $CONNECTION_URL"
-echo "** BPMS connection username: $CONNECTION_USERNAME"
-echo "** BPMS connection password: $CONNECTION_PASSWORD"
-echo "** USE_REMOTE_HQ_BROKERS: $USE_REMOTE_HQ_BROKERS"
 
-if [[ -z $USE_REMOTE_HQ_BROKERS ]]; then
-  image_xpaas_bpmsuite=$(docker run -P -d --name $CONTAINER_NAME -e BPMS_CONNECTION_URL="$CONNECTION_URL" -e BPMS_CONNECTION_DRIVER="$CONNECTION_DRIVER" -e BPMS_CONNECTION_USER="$CONNECTION_USERNAME" -e BPMS_CONNECTION_PASSWORD="$CONNECTION_PASSWORD" --link="hq0-bpmsuite:hq0" $IMAGE_NAME:$IMAGE_TAG)
-else
-  image_xpaas_bpmsuite=$(docker run -P -d --name $CONTAINER_NAME -e BPMS_CONNECTION_URL="$CONNECTION_URL" -e BPMS_CONNECTION_DRIVER="$CONNECTION_DRIVER" -e BPMS_CONNECTION_USER="$CONNECTION_USERNAME" -e BPMS_CONNECTION_PASSWORD="$CONNECTION_PASSWORD" $IMAGE_NAME:$IMAGE_TAG)
+dockerrun="run ";
+
+if [ x$USE_REMOTE_HQ_BROKERS == xTRUE ]; then
+  echo "** USE_REMOTE_HQ_BROKERS: $USE_REMOTE_HQ_BROKERS"
+  dockerrun="$dockerrun --link=hq0-bpmsuite:hq0"
 fi
+
+if [ x$USE_LINKED_MYSQL == xTRUE ]; then
+  echo "** USE_LINKED_MYSQL: $USE_LINKED_MYSQL"
+  dockerrun="$dockerrun --link=mysql-bpmsuite:mysql"
+else
+  echo "** BPMS connection driver: $CONNECTION_DRIVER"
+  echo "** BPMS connection URL: $CONNECTION_URL"
+  echo "** BPMS connection username: $CONNECTION_USERNAME"
+  echo "** BPMS connection password: $CONNECTION_PASSWORD"
+  dockerrun="$dockerrun -e BPMS_CONNECTION_URL=$CONNECTION_URL -e BPMS_CONNECTION_DRIVER=$CONNECTION_DRIVER -e BPMS_CONNECTION_USER=$CONNECTION_USERNAME -e BPMS_CONNECTION_PASSWORD=$CONNECTION_PASSWORD"
+fi
+
+dockerrun="$dockerrun -P -d --name $CONTAINER_NAME $IMAGE_NAME:$IMAGE_TAG"
+echo "dockerrun = docker $dockerrun"
+
+image_xpaas_bpmsuite=$(docker $dockerrun)
 ip_bpmsuite=$(docker inspect $image_xpaas_bpmsuite | grep IPAddress | awk '{print $2}' | tr -d '",')
 echo $image_xpaas_bpmsuite > docker.pid
+docker_pid=$(docker inspect --format '{{ .State.Pid }}' $CONTAINER_NAME)
 
 # End
 echo ""
 echo "Server starting in $ip_bpmsuite"
 echo "You can access the server root context in http://$ip_bpmsuite:8080"
 echo "JBoss BPM Suite is running at http://$ip_bpmsuite:8080/business-central"
-
+echo "Log into your new $CONTAINER_NAME container by executing: nsenter -m -u -n -i -p -t $docker_pid /bin/bash"
+echo "Linked containers as follows:"
+docker inspect -f "{{ .HostConfig.Links }}" $CONTAINER_NAME
 exit 0

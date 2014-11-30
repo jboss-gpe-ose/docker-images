@@ -77,6 +77,9 @@ chown jboss:jboss /opt/jboss/eap/standalone/configuration/bpms-roles.properties;
 chown jboss:jboss /opt/jboss/eap/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template; \ 
 chown jboss:jboss /opt/jboss/bpms/quartz-db.properties
 
+# Assign a shell to jboss user so as to allow switching to this user
+RUN usermod -s /bin/bash jboss
+
 # Add the executable flag.
 RUN chmod +x /opt/jboss/bpms/start-bpms.sh
 
