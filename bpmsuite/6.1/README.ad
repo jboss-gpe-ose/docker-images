@@ -50,23 +50,18 @@ docker inspect mysql-bpmsuite | grep IPAddress | cut -d '"' -f 4
 -----
 
 == xpaas_bpmsuite
+Once both the `mysql-bpmsuite` and `hq0-bpmsuite` containers are running, the `xpaas-bpmsuite` container can be run.
+The `mysql-bpmsuite` and `hq0-bpmsuite` containers can be linked to the `xpaas-bpmsuite` container.
+By doing so, the `xpaas-bpmsuite` container is able to detect at runtime the needed information about its linked containers to connect to them.
 
-. start the xpaas-bpmsuite container using the connection URL to a remote non-containerized mysql jbpm database:
+Start the `xpaas-bpmsuite` container as follows:
 +
 -----
-./start.sh -d "mysql" -url "jdbc:mysql://172.17.0.20:3306/jbpm" -user jbpm -password jbpm
------
-
-. start the xpaas-bpmsuite container : 
-.. Linked to the `mysql-bpmsuite` container
-.. Linked to the `hq0-bpmsuite` container
-+
------
-./start.sh -useRemoteHQ -useLinkedMySQL
+xpaas-bpmsuite/start.sh -useRemoteHQ -useLinkedMySQL
 -----
 
 
-== Issues
+== Research
 
 . Needed system properties
 .. jbpm.audit.jms.enabled
