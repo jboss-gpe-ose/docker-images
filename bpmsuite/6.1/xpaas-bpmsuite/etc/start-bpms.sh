@@ -1,6 +1,9 @@
 #!/bin/sh
 
+
 DOCKER_IP=$(ip addr show eth0 | grep -E '^\s*inet' | grep -m1 global | awk '{ print $2 }' | sed 's|/.*||')
+
+echo -en "DOCKER_IP = $DOCKER_IP\n" > /tmp/start-bpms.log
 
 JBOSS_COMMON_ARGS="-Djboss.bind.address=$DOCKER_IP -Djboss.bind.address.management=$DOCKER_IP "
 JBOSS_BPMS_DB_ARGUMENTS=
@@ -12,9 +15,17 @@ if [[ -z "$JBOSS_BIND_ADDRESS" ]] ; then
     export JBOSS_BIND_ADDRESS=$DOCKER_IP
 fi
 
+# *******************
 # BPMS database configuration
-JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=\"$BPMS_CONNECTION_URL\" -Djboss.bpms.driver=\"$BPMS_CONNECTION_DRIVER\" "
-JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=\"$BPMS_CONNECTION_USER\" -Djboss.bpms.password=\"$BPMS_CONNECTION_PASSWORD\" "
+echo -en "MYSQL_PORT_3306_TCP_ADDR = $MYSQL_PORT_3306_TCP_ADDR" >> /tmp/start-bpms.log
+if [ "x$MYSQL_PORT_3306_TCP_ADDR" != "x" ]; then
+    JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=jdbc:mysql://$MYSQL_PORT_3306_TCP_ADDR:3306/jbpm -Djboss.bpms.driver=mysql "
+    JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=jbpm -Djboss.bpms.password=jbpm "
+else
+    JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=\"$BPMS_CONNECTION_URL\" -Djboss.bpms.driver=\"$BPMS_CONNECTION_DRIVER\" "
+    JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=\"$BPMS_CONNECTION_USER\" -Djboss.bpms.password=\"$BPMS_CONNECTION_PASSWORD\" "
+fi
+# *******************
 
 # *************************************************
 # Webapp persistence descriptor dynamic generation.
@@ -35,7 +46,7 @@ then
 fi
 
 # Check MySQL database.
-if [[ $BPMS_CONNECTION_DRIVER == *mysql* ]]; 
+if [[ $BPMS_CONNECTION_DRIVER == *mysql* ]] || [ "x$MYSQL_PORT_3306_TCP_ADDR" != "x" ]; 
 then
     echo "Using MySQL dialect for BPMS webapp"
     DIALECT=org.hibernate.dialect.MySQLDialect
@@ -94,6 +105,31 @@ if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
 fi
 
 # *******************
+# OPTIONAL REMOTE MESSAGING BROKER
+echo -en "HQ0_PORT_5445_TCP_ADDR = $HQ0_PORT_5445_TCP_ADDR" >> /tmp/start-bpms.log
+if [ "x$HQ0_PORT_5445_TCP_ADDR" != "x" ]; then
+    echo -en "\nhq0-bpmsuite container has been linked.  Will use this remote HQ broker\n" >> /tmp/start-bpms.log
+    echo -en "\nhornetq.remote.address = $HQ0_PORT_5445_TCP_ADDR ; hornetq.remote.port = $HQ0_PORT_5445_TCP_PORT\n" >> /tmp/start-bpms.log
+
+    # create REMOTE_MESSAGING_ARGUMENTS variable to be passed to jboss eap startup
+    REMOTE_MESSAGING_ARGUMENTS="-Dhornetq.remote.address=$HQ0_PORT_5445_TCP_ADDR -Dhornetq.remote.port=$HQ0_PORT_5445_TCP_PORT"
+
+    # start eap in admin-only mode
+    /opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml --admin-only &
+    sleep 15
+
+    # execute the CLI that tunes the messaging subsystem
+    /opt/jboss/eap/bin/jboss-cli.sh --connect --file=/opt/jboss/bpms/use_remote_hq_broker.cli >> /tmp/start-bpms.log 2>&1
+    /opt/jboss/eap/bin/jboss-cli.sh --connect ":shutdown" >> /tmp/start-bpms.log 2>&1
+
+    # remove orignal config that defines KIE related queues
+    rm /opt/jboss/eap/standalone/deployments/business-central.war/WEB-INF/bpms-jms.xml
+fi
+# *******************
+
+
+
+# *******************
 # RUNNING BPMS Server
 # *******************
 # Boot EAP with BPMS in standalone mode by default
@@ -111,4 +147,4 @@ echo "Using as JBoss BPMS connection arguments: $JBOSS_BPMS_DB_ARGUMENTS"
 if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
     echo "Using as JBoss BPMS cluster arguments: $JBOSS_BPMS_CLUSTER_ARGUMENTS"
 fi
-/opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS
+/opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS >> /tmp/start-bpms.log 2>&1

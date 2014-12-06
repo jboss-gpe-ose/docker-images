@@ -43,8 +43,8 @@ RUN /opt/hq-bpmsuite/config/create-queues.sh
 # Assign a shell to jboss user so as to allow switching to this user
 RUN usermod -s /bin/bash jboss
 
-# Expose port 8080,9990,9999
-EXPOSE 8080 9990 9999
+# Expose port 8080,9990,9999,5445,5455
+EXPOSE 8080 9990 9999 5445 5455
 
 # Entrypoint
 ENTRYPOINT ["/bin/bash", "/opt/hq-bpmsuite/config/start-container.sh"]

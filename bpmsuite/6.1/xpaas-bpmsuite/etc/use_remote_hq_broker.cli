@@ -1,0 +1,7 @@
+batch
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=remote-messaging:add(host="${hornetq.remote.address:localhost}",port="${hornetq.remote.port:5445}")
+/subsystem=messaging/hornetq-server=default:remove()
+/subsystem=messaging/hornetq-server=default:add(persistence-enabled=false)
+/subsystem=messaging/hornetq-server=default/remote-connector=netty-remote:add(socket-binding=remote-messaging)
+/subsystem=messaging/hornetq-server=default/pooled-connection-factory=hornetq-ra:add(consumer-window-size=0,ha=true,reconnect-attempts=-1,block-on-acknowledge=true,retry-interval=1000,retry-interval-multiplier=1,transaction=xa,connector={"netty-remote" => "xyz"},entries=["java:/JmsXA"])
+run-batch

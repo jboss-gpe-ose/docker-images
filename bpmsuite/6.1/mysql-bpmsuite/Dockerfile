@@ -35,6 +35,8 @@ ADD ./sql /sql
 ADD /create-schema.sh /create-schema.sh
 RUN chmod 755 /create-schema.sh
 
+RUN /create-schema.sh
+
 #Expose port 3306
 EXPOSE 3306
 
