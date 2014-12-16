@@ -78,7 +78,7 @@ By doing so, the `xpaas-bpmsuite` container is able to detect at runtime the nee
 Start the `xpaas-bpmsuite` container as follows:
 
 -----
-xpaas-bpmsuite/start.sh -useRemoteHQ -useLinkedMySQL
+xpaas-bpmsuite/start.sh -useRemoteHQ -useLinkedMySQL -useSharedBPMFilesystem
 -----
 
 . The output of the above command will be similar to the following:
@@ -107,16 +107,10 @@ It also provides the command to obtain shee access to the running bpm container
 .. jbpm.audit.jms.connection.factory.jndi
 .. jbpm.audit.jms.queue.jndi
 .. org.quartz.properties
-.. org.uberfire.nio.git.dir
 .. org.uberfire.nio.git.daemon.enabled
-.. org.uberfire.nio.git.daemon.hostname     :   should be set to automatically bind to host of BPM container by default
-.. org.uberfire.nio.git.daemon.port         :   should be automatically exposed to remote clients
 .. org.uberfire.nio.git.ssh.enabled
-.. org.uberfire.nio.git.ssh.hostname        :   should be set to automatically bind to host of BPM container by default
-.. org.uberfire.nio.git.ssh.port            :   should be automatically exposed to remote clients
 .. org.uberfire.nio.git.ssh.cert.dir
 .. org.guvnor.m2repo.dir
-.. org.uberfire.metadata.index.dir
 
 . How to modify a System property after initial container start
 +

@@ -7,7 +7,9 @@ RUN yum -y update; yum clean all
 RUN groupadd -r jboss -g 1000 && useradd -u 1000 -r -g jboss -d /opt/jboss -s /bin/bash -c "JBoss user" jboss
 RUN mkdir -p /opt/shared/hq-journal
 RUN mkdir -p /opt/shared/hq-cluster-discovery
-RUN mkdir -p /opt/shared/bpm-artifact-repo
+RUN mkdir -p /opt/shared/bpm/artifact-repo
+RUN mkdir -p /opt/shared/bpm/git
+RUN mkdir -p /opt/shared/bpm/lucene
 
 # Change permissions to user jboss
 RUN chown -R jboss:jboss /opt/shared
@@ -15,6 +17,8 @@ RUN chown -R jboss:jboss /opt/shared
 # Mount as volume
 VOLUME /opt/shared/hq-journal
 VOLUME /opt/shared/hq-cluster-discovery
-VOLUME /opt/shared/bpm-artifact-repo
+VOLUME /opt/shared/bpm/artifact-repo
+VOLUME /opt/shared/bpm/git
+VOLUME /opt/shared/bpm/lucene
 
 CMD true

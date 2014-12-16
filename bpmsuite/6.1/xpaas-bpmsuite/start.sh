@@ -31,7 +31,7 @@ CONNECTION_PASSWORD=SA
 
 function usage
 {
-     echo "usage: start.sh [ [-c <container_name> ] ] [-h] [-useRemoteHQ] [-useLinkedMySQL] ]"
+     echo "usage: start.sh [ [-c <container_name> ] ] [-h] [-useRemoteHQ] [-useLinkedMySQL] i[-useSharedBPMFilesystem] ]"
 }
 
 while [ "$1" != "" ]; do
@@ -56,6 +56,9 @@ while [ "$1" != "" ]; do
                                 ;;
         -useLinkedMySQL ) 
                                 USE_LINKED_MYSQL=TRUE
+                                ;;
+        -useSharedBPMFilesystem ) 
+                                USE_SHARED_BPM_FILESYSTEM=TRUE
                                 ;;
         -h | --help )           usage
                                 exit
@@ -95,6 +98,11 @@ else
   echo "** BPMS connection username: $CONNECTION_USERNAME"
   echo "** BPMS connection password: $CONNECTION_PASSWORD"
   dockerrun="$dockerrun -e BPMS_CONNECTION_URL=$CONNECTION_URL -e BPMS_CONNECTION_DRIVER=$CONNECTION_DRIVER -e BPMS_CONNECTION_USER=$CONNECTION_USERNAME -e BPMS_CONNECTION_PASSWORD=$CONNECTION_PASSWORD"
+fi
+
+if [ x$USE_SHARED_BPM_FILESYSTEM == xTRUE ]; then
+  echo "** USE_SHARED_BPM_FILESYSTEM: $USE_SHARED_BPM_FILESYSTEM"
+  dockerrun="$dockerrun --volumes-from=storage-bpmsuite"
 fi
 
 dockerrun="$dockerrun -P -d --name $CONTAINER_NAME $IMAGE_NAME:$IMAGE_TAG"

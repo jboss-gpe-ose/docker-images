@@ -84,6 +84,9 @@ RUN usermod -s /bin/bash jboss
 # Add the executable flag.
 RUN chmod +x /opt/jboss/bpms/start-bpms.sh
 
+# Expose port git & git ssh ports
+EXPOSE 9520 9521
+
 # Switchback to jboss user
 USER jboss
 

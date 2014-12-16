@@ -45,12 +45,13 @@
     <property name="designerdataobjects" value="${designerdataobjects:false}"/>
 
     <!-- XPAAS BPMSUITE - CUSTOM PROPERTIES FOR CLUSTERING -->
-    <property name="org.uberfire.nio.git.daemon.host" value="${jboss.bpms.git.host:127.0.0.1}"/>
-    <property name="org.uberfire.nio.git.daemon.port" value="${jboss.bpms.git.port:9520}"/>
-    <property name="org.uberfire.nio.git.dir" value="${jboss.bpms.git.dir:/opt/jboss/bpms/vfs}"/>
-    <property name="org.uberfire.nio.git.ssh.host" value="${jboss.bpms.ssh.host:127.0.0.1}"/>
-    <property name="org.uberfire.nio.git.ssh.port" value="${jboss.bpms.ssh.port:9521}"/>
-    <property name="org.uberfire.metadata.index.dir" value="${jboss.bpms.index.dir:/opt/jboss/bpms/index}"/>
+    <property name="org.uberfire.nio.git.daemon.host" value="${jboss.bind.address:127.0.0.1}"/>
+    <property name="org.uberfire.nio.git.daemon.port" value="${org.uberfire.nio.git.daemon.port:9520}"/>
+    <property name="org.uberfire.nio.git.dir" value="${org.uberfire.nio.git.dir:/opt/jboss/bpms/vfs}"/>
+    <property name="org.uberfire.nio.git.ssh.host" value="${jboss.bind.address:127.0.0.1}"/>
+    <property name="org.uberfire.nio.git.ssh.port" value="${org.uberfire.nio.git.ssh.port:9521}"/>
+    <property name="org.uberfire.metadata.index.dir" value="${org.uberfire.metadata.index.dir:/opt/jboss/bpms/index}"/>
+    <property name="org.guvnor.m2repo.dir" value="${org.guvnor.m2repo.dir:/opt/jboss/bpms/repository}"/>
     <property name="org.uberfire.nio.git.ssh.enabled" value="true"/>
     <property name="org.uberfire.nio.git.daemon.upload" value="true"/>
     <!-- <property name="org.uberfire.nio.git.ssh.cert.dir" value=""/> -->

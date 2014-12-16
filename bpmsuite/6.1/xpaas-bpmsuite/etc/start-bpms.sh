@@ -128,6 +128,19 @@ fi
 # *******************
 
 
+# *******************
+# OPTIONAL SHARED VOLUME
+sharedDir=/opt/shared/bpm
+if [ -d "$sharedDir" ]; then
+    echo -en "\n$sharedDir exists.  BPM Suite 6 specific file systems will be written to this shared location\n" >> /tmp/start-bpms.log
+    SHARED_BPM_FILESYSTEM_ARGUMENTS="-Dorg.uberfire.nio.git.dir=$sharedDir/git -Dorg.guvnor.m2repo.dir=$sharedDir/artifact-repo -Dorg.uberfire.metadata.index.dir=$sharedDir/lucene"
+else
+    echo -en "\n$sharedDir does not exist.  BPM Suite 6 specific file systems will be written to defaults as per system properties in standalone-full-ha.xml\n" >> /tmp/start-bpms.log
+fi
+
+# *******************
+
+
 
 # *******************
 # RUNNING BPMS Server
@@ -147,4 +160,4 @@ echo "Using as JBoss BPMS connection arguments: $JBOSS_BPMS_DB_ARGUMENTS"
 if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
     echo "Using as JBoss BPMS cluster arguments: $JBOSS_BPMS_CLUSTER_ARGUMENTS"
 fi
-/opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS >> /tmp/start-bpms.log 2>&1
+/opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS $SHARED_BPM_FILESYSTEM_ARGUMENTS>> /tmp/start-bpms.log 2>&1
