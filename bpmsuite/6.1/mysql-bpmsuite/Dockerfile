@@ -4,7 +4,7 @@ FROM rhel7
 RUN yum -y update; yum clean all
 
 # Pull supervisor package from EPEL
-RUN rpm -ivh http://mirror.symnds.com/distributions/fedora-epel/7/x86_64/e/epel-release-7-2.noarch.rpm
+RUN rpm -ivh http://mirror.symnds.com/distributions/fedora-epel/7/x86_64/e/epel-release-7-5.noarch.rpm
 RUN yum install --enablerepo=rhel-7-server-rpms -y supervisor
 RUN rpm -e epel-release
 

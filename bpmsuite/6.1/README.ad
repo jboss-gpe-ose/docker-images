@@ -1,21 +1,36 @@
-== Build the bpm xpaas images
+?? docker exec rather than nsenter ??
 
-. docker build --rm=true -t storage-bpmsuite storage-bpmsuite
-. docker build --rm=true -t hq-bpmsuite hq-bpmsuite
-. docker build --rm=true -t mysql-bpmsuite mysql-bpmsuite
+== Build and view the bpm xpaas images
+. Build the bpm xpaas images included in this project
++
+-----
+docker build --rm=true -t storage-bpmsuite storage-bpmsuite
+docker build --rm=true -t mysql-bpmsuite mysql-bpmsuite
+docker build --rm=true -t hq-bpmsuite hq-bpmsuite
+cd xpaas-bpmsuite
+./build.sh
+-----
 
 == storage-bpmsuite
+Run one `storage-bpmsuite` container that simulates a clustered file system
 
-. docker run -d --name="storage-bpmsuite" storage-bpmsuite
+-----
+docker run -d --name="storage-bpmsuite" storage-bpmsuite
+-----
 
 == hq-bpmsuite
 
-. docker run -d --name="hq0-bpmsuite" -e HORNETQ_NODE=hornetq0 -e HORNETQ_BACKUP_NODE=hornetq1 --volumes-from=storage-bpmsuite hq-bpmsuite
-. docker run -d --name="hq1-bpmsuite" -e HORNETQ_NODE=hornetq1 -e HORNETQ_BACKUP_NODE=hornetq0 --volumes-from=storage-bpmsuite hq-bpmsuite
-. identify PID of hq0-bpmsuite container
+. Run two Hornetq broker nodes configured in HA
 +
 -----
-docker inspect --format '{{ .State.Pid }}' hq1-bpmsuite
+docker run -d --name="hq0-bpmsuite" -e HORNETQ_NODE=hornetq0 -e HORNETQ_BACKUP_NODE=hornetq1 --volumes-from=storage-bpmsuite hq-bpmsuite
+docker run -d --name="hq1-bpmsuite" -e HORNETQ_NODE=hornetq1 -e HORNETQ_BACKUP_NODE=hornetq0 --volumes-from=storage-bpmsuite hq-bpmsuite
+-----
+
+.  identify PID of hq0-bpmsuite container
++
+-----
+docker inspect --format '{{ .State.Pid }}' hq0-bpmsuite
 8034
 -----
 
@@ -23,10 +38,15 @@ docker inspect --format '{{ .State.Pid }}' hq1-bpmsuite
 +
 -----
 nsenter -m -u -n -i -p -t 8034 /bin/bash
+-----
 
 == mysql-bpmsuite
+. Run one `mysql-bpmsuite` container
++
+-----
+docker run -d --name="mysql-bpmsuite" mysql-bpmsuite
+-----
 
-. docker run -d --name="mysql-bpmsuite" mysql-bpmsuite
 . identify PID of mysql-bpmsuite container
 +
 -----
@@ -54,11 +74,27 @@ Once both the `mysql-bpmsuite` and `hq0-bpmsuite` containers are running, the `x
 The `mysql-bpmsuite` and `hq0-bpmsuite` containers can be linked to the `xpaas-bpmsuite` container.
 By doing so, the `xpaas-bpmsuite` container is able to detect at runtime the needed information about its linked containers to connect to them.
 
+
 Start the `xpaas-bpmsuite` container as follows:
-+
+
 -----
 xpaas-bpmsuite/start.sh -useRemoteHQ -useLinkedMySQL
 -----
+
+. The output of the above command will be similar to the following:
++
+-----
+Server starting in 172.17.0.28
+You can access the server root context in http://172.17.0.28:8080
+JBoss BPM Suite is running at http://172.17.0.28:8080/business-central
+Log into your new xpaas-bpmsuite container by executing: nsenter -m -u -n -i -p -t 17997 /bin/bash
+Linked containers as follows:
+[/hq0-bpmsuite:/xpaas-bpmsuite/hq0 /mysql-bpmsuite:/xpaas-bpmsuite/mysql]
+-----
++
+The above output is valuable as it indicates the URL to access the BPM Console of BPM Suite 6.
+It also provides the command to obtain shee access to the running bpm container
+
 
 
 == Research
@@ -92,4 +128,3 @@ If so, any state used by the BPM container would need to reside external; ie; pr
 
 . Would be nice to:  su - jboss
 .. Thus, need to change entry in /etc/passwd
-

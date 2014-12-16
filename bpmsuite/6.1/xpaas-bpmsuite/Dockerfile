@@ -7,7 +7,8 @@
 ############################################################
 
 ####### BASE ############
-FROM docker-registry.usersys.redhat.com/goldmann/jboss-bpms:6.1
+#FROM docker-registry.usersys.redhat.com/goldmann/jboss-bpms:6.1
+FROM jboss-bpms:6.1
 
 ####### MAINTAINER ############
 MAINTAINER "JBoss XPaaS Team" "xpass-eng@redhat.com"
