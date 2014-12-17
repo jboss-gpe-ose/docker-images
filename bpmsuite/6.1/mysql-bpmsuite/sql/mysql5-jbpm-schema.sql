@@ -100,6 +100,16 @@
         entity_id varchar(255) not null
     );
 
+    create table DeploymentStore (
+        id bigint not null auto_increment,
+        attributes varchar(255),
+        DEPLOYMENT_ID varchar(255),
+        deploymentUnit longtext,
+        state integer,
+        updateDate datetime,
+        primary key (id)
+    );
+
     create table ErrorInfo (
         id bigint not null auto_increment,
         message varchar(255),
@@ -231,6 +241,7 @@
         outcome varchar(255),
         parentProcessInstanceId bigint,
         processId varchar(255),
+        processInstanceDescription varchar(255),
         processInstanceId bigint not null,
         processName varchar(255),
         processVersion varchar(255),
@@ -257,6 +268,7 @@
         executions integer not null,
         businessKey varchar(255),
         message varchar(255),
+        owner varchar(255),
         requestData longblob,
         responseData longblob,
         retries integer not null,
@@ -278,9 +290,12 @@
         id bigint not null auto_increment,
         archived smallint,
         allowedToDelegate varchar(255),
+        description varchar(255),
         formName varchar(255),
+        name varchar(255),
         priority integer not null,
         subTaskStrategy varchar(255),
+        subject varchar(255),
         activationTime datetime,
         createdOn datetime,
         deploymentId varchar(255),
@@ -420,6 +435,9 @@
         add constraint FK47485D57786553A5 
         foreign key (task_id) 
         references Task (id);
+
+    alter table DeploymentStore 
+        add constraint UK_DeploymentStore_1 unique (DEPLOYMENT_ID);
 
     alter table ErrorInfo 
         add index FK8B1186B6724A467 (REQUEST_ID), 
