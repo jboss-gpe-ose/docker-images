@@ -183,7 +183,7 @@ docker inspect --format '{{ .State.Pid }}' hq0-bpmsuite
 -----
 
 . log into the hq0-bpmsuite container
-+
++xpaas-bpmsuite/start.sh -c bpm-ui -useRemoteHQ -useLinkedMySQL -useSharedBPMFilesystem
 -----
 nsenter -m -u -n -i -p -t 8034 /bin/bash
 -----
@@ -243,7 +243,8 @@ The output of the above command will be similar to the following:
 
 -----
 Server starting at: 172.17.0.2
-BPM Console available at: http://172.17.0.28:8080/business-central
+BPM Exec Server available at: http://172.17.0.28:8080/business-central/rest
+kie-execution-server available at http://172.17.0.28:8080/kie-execution-server
 Log into your new xpaas-bpmsuite container by executing: nsenter -m -u -n -i -p -t 17997 /bin/bash
 Linked containers as follows:
 [/hq0-bpmsuite:/xpaas-bpmsuite/hq0 /mysql-bpmsuite:/xpaas-bpmsuite/mysql]

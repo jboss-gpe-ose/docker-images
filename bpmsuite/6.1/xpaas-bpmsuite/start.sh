@@ -126,7 +126,8 @@ docker_pid=$(docker inspect --format '{{ .State.Pid }}' $CONTAINER_NAME)
 echo ""
 echo "Server starting at: $ip_bpmsuite"
 if [ x$EXEC_SERVER_PROFILE == xTRUE ]; then
-    echo "BPM Exec Server API Documentation available at http://$ip_bpmsuite:8080/business-central"
+    echo "BPM Exec Server available at http://$ip_bpmsuite:8080/business-central/rest"
+    echo "kie-execution-server available at http://$ip_bpmsuite:8080/kie-execution-server"
 else
     echo "BPM Console available at:  http://$ip_bpmsuite:8080/business-central"
 fi
