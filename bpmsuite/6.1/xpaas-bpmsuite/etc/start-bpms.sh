@@ -1,5 +1,6 @@
 #!/bin/sh
 
+JBOSS_HOME=/opt/jboss/eap
 
 DOCKER_IP=$(ip addr show eth0 | grep -E '^\s*inet' | grep -m1 global | awk '{ print $2 }' | sed 's|/.*||')
 
@@ -30,8 +31,8 @@ fi
 # *************************************************
 # Webapp persistence descriptor dynamic generation.
 # *************************************************
-PERSISTENCE_TEMPLATE_PATH=/opt/jboss/eap/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
-PERSISTENCE_PATH=/opt/jboss/eap/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml
+PERSISTENCE_TEMPLATE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
+PERSISTENCE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml
 DEFAULT_DIALECT=org.hibernate.dialect.H2Dialect
 DIALECT=org.hibernate.dialect.H2Dialect
 # Remove, if existing, the current webapp persistence descriptor.
@@ -64,8 +65,8 @@ if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
     JBOSS_CLUSTER_PROPERTIES_START=""
     JBOSS_CLUSTER_PROPERTIES_END=""
 fi
-STANDALONE_TEMPLATE_PATH=/opt/jboss/eap/standalone/configuration/standalone-full-ha.xml.template
-STANDALONE_PATH=/opt/jboss/eap/standalone/configuration/standalone-full-ha.xml
+STANDALONE_TEMPLATE_PATH=$JBOSS_HOME/standalone/configuration/standalone-full-ha.xml.template
+STANDALONE_PATH=$JBOSS_HOME/standalone/configuration/standalone-full-ha.xml
 # Remove, if existing, the current standalone descriptor.
 if [ -f $STANDALONE_PATH ]; then
     rm -f $STANDALONE_PATH
@@ -115,15 +116,15 @@ if [ "x$HQ0_PORT_5445_TCP_ADDR" != "x" ]; then
     REMOTE_MESSAGING_ARGUMENTS="-Dhornetq.remote.address=$HQ0_PORT_5445_TCP_ADDR -Dhornetq.remote.port=$HQ0_PORT_5445_TCP_PORT"
 
     # start eap in admin-only mode
-    /opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml --admin-only &
+    $JBOSS_HOME/bin/standalone.sh --server-config=standalone-full-ha.xml --admin-only &
     sleep 15
 
     # execute the CLI that tunes the messaging subsystem
-    /opt/jboss/eap/bin/jboss-cli.sh --connect --file=/opt/jboss/bpms/use_remote_hq_broker.cli >> /tmp/start-bpms.log 2>&1
-    /opt/jboss/eap/bin/jboss-cli.sh --connect ":shutdown" >> /tmp/start-bpms.log 2>&1
+    $JBOSS_HOME/bin/jboss-cli.sh --connect --file=/opt/jboss/bpms/use_remote_hq_broker.cli >> /tmp/start-bpms.log 2>&1
+    $JBOSS_HOME/bin/jboss-cli.sh --connect ":shutdown" >> /tmp/start-bpms.log 2>&1
 
     # remove orignal config that defines KIE related queues
-    rm /opt/jboss/eap/standalone/deployments/business-central.war/WEB-INF/bpms-jms.xml
+    rm $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/bpms-jms.xml
 fi
 # *******************
 
@@ -138,6 +139,19 @@ else
     echo -en "\n$sharedDir does not exist.  BPM Suite 6 specific file systems will be written to defaults as per system properties in standalone-full-ha.xml\n" >> /tmp/start-bpms.log
 fi
 
+# *******************
+
+
+# *******************
+# BPM PROFILE
+echo -en "\nEXEC_SERVER_PROFILE = $EXEC_SERVER_PROFILE\n" >> /tmp/start-bpms.log
+if [ "x$EXEC_SERVER_PROFILE" != "x" ]; then
+    cp $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web-exec-server.xml $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web.xml
+    BPM_PROFILE_ARGUMENTS="-Dorg.kie.active.profile=exec-server"
+else
+    cp $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web-ui-server.xml $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web.xml
+    BPM_PROFILE_ARGUMENTS="-Dorg.kie.active.profile=ui-server"
+fi
 # *******************
 
 
@@ -160,4 +174,8 @@ echo "Using as JBoss BPMS connection arguments: $JBOSS_BPMS_DB_ARGUMENTS"
 if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
     echo "Using as JBoss BPMS cluster arguments: $JBOSS_BPMS_CLUSTER_ARGUMENTS"
 fi
-/opt/jboss/eap/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS $SHARED_BPM_FILESYSTEM_ARGUMENTS>> /tmp/start-bpms.log 2>&1
+
+# customize size of JVM heap
+JAVA_OPTS="-Xms128m -Xmx1303m -XX:MaxPermSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=$JBOSS_MODULES_SYSTEM_PKGS -Djava.awt.headless=true -Djboss.modules.policy-permissions=true"
+export JAVA_OPTS
+$JBOSS_HOME/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS $SHARED_BPM_FILESYSTEM_ARGUMENTS $BPM_PROFILE_ARGUMENTS >> /tmp/start-bpms.log 2>&1

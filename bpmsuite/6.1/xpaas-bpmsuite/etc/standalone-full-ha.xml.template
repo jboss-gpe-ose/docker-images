@@ -44,7 +44,7 @@
     <property name="org.jbpm.designer.perspective" value="${org.jbpm.designer.perspective:full}"/>
     <property name="designerdataobjects" value="${designerdataobjects:false}"/>
 
-    <!-- XPAAS BPMSUITE - CUSTOM PROPERTIES FOR CLUSTERING -->
+    <!-- XPAAS BPMSUITE - CUSTOM PROPERTIES -->
     <property name="org.uberfire.nio.git.daemon.host" value="${jboss.bind.address:127.0.0.1}"/>
     <property name="org.uberfire.nio.git.daemon.port" value="${org.uberfire.nio.git.daemon.port:9520}"/>
     <property name="org.uberfire.nio.git.dir" value="${org.uberfire.nio.git.dir:/opt/jboss/bpms/vfs}"/>
@@ -54,7 +54,10 @@
     <property name="org.guvnor.m2repo.dir" value="${org.guvnor.m2repo.dir:/opt/jboss/bpms/repository}"/>
     <property name="org.uberfire.nio.git.ssh.enabled" value="true"/>
     <property name="org.uberfire.nio.git.daemon.upload" value="true"/>
+    <property name="org.kie.active.profile" value="${org.kie.active.profile:ui-server}"/>
     <!-- <property name="org.uberfire.nio.git.ssh.cert.dir" value=""/> -->
+
+    <!-- XPAAS BPMSUITE - CUSTOM PROPERTIES FOR CLUSTERING -->
     %CLUSTER_PROPERTIES_START%
     <property name="org.uberfire.cluster.id" value="${jboss.bpms.cluster.id}"/>
     <property name="org.uberfire.cluster.zk" value="${jboss.bpms.cluster.zk}"/>

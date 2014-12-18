@@ -60,6 +60,9 @@ while [ "$1" != "" ]; do
         -useSharedBPMFilesystem ) 
                                 USE_SHARED_BPM_FILESYSTEM=TRUE
                                 ;;
+        -execServer ) 
+                                EXEC_SERVER_PROFILE=TRUE
+                                ;;
         -h | --help )           usage
                                 exit
                                 ;;
@@ -105,6 +108,12 @@ if [ x$USE_SHARED_BPM_FILESYSTEM == xTRUE ]; then
   dockerrun="$dockerrun --volumes-from=storage-bpmsuite"
 fi
 
+if [ x$EXEC_SERVER_PROFILE == xTRUE ]; then
+  echo "** USE_SHARED_BPM_FILESYSTEM: $EXEC_SERVER_PROFILE"
+  dockerrun="$dockerrun -e EXEC_SERVER_PROFILE=$EXEC_SERVER_PROFILE"
+fi
+
+
 dockerrun="$dockerrun -P -d --name $CONTAINER_NAME $IMAGE_NAME:$IMAGE_TAG"
 echo "dockerrun = docker $dockerrun"
 
@@ -115,9 +124,12 @@ docker_pid=$(docker inspect --format '{{ .State.Pid }}' $CONTAINER_NAME)
 
 # End
 echo ""
-echo "Server starting in $ip_bpmsuite"
-echo "You can access the server root context in http://$ip_bpmsuite:8080"
-echo "JBoss BPM Suite is running at http://$ip_bpmsuite:8080/business-central"
+echo "Server starting at: $ip_bpmsuite"
+if [ x$EXEC_SERVER_PROFILE == xTRUE ]; then
+    echo "BPM Exec Server API Documentation available at http://$ip_bpmsuite:8080/business-central"
+else
+    echo "BPM Console available at:  http://$ip_bpmsuite:8080/business-central"
+fi
 echo "Log into your new $CONTAINER_NAME container by executing: nsenter -m -u -n -i -p -t $docker_pid /bin/bash"
 echo "Linked containers as follows:"
 docker inspect -f "{{ .HostConfig.Links }}" $CONTAINER_NAME
