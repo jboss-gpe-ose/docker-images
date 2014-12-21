@@ -1,6 +1,9 @@
 #!/bin/sh
 
 JBOSS_HOME=/opt/jboss/eap
+CONTAINER_CONFIG=/opt/jboss/bpms
+DEFAULT_DIALECT=org.hibernate.dialect.H2Dialect
+DIALECT=org.hibernate.dialect.H2Dialect
 
 DOCKER_IP=$(ip addr show eth0 | grep -E '^\s*inet' | grep -m1 global | awk '{ print $2 }' | sed 's|/.*||')
 
@@ -16,44 +19,6 @@ if [[ -z "$JBOSS_BIND_ADDRESS" ]] ; then
     export JBOSS_BIND_ADDRESS=$DOCKER_IP
 fi
 
-# *******************
-# BPMS database configuration
-echo -en "MYSQL_PORT_3306_TCP_ADDR = $MYSQL_PORT_3306_TCP_ADDR" >> /tmp/start-bpms.log
-if [ "x$MYSQL_PORT_3306_TCP_ADDR" != "x" ]; then
-    JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=jdbc:mysql://$MYSQL_PORT_3306_TCP_ADDR:3306/jbpm -Djboss.bpms.driver=mysql "
-    JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=jbpm -Djboss.bpms.password=jbpm "
-else
-    JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=\"$BPMS_CONNECTION_URL\" -Djboss.bpms.driver=\"$BPMS_CONNECTION_DRIVER\" "
-    JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=\"$BPMS_CONNECTION_USER\" -Djboss.bpms.password=\"$BPMS_CONNECTION_PASSWORD\" "
-fi
-# *******************
-
-# *************************************************
-# Webapp persistence descriptor dynamic generation.
-# *************************************************
-PERSISTENCE_TEMPLATE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
-PERSISTENCE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml
-DEFAULT_DIALECT=org.hibernate.dialect.H2Dialect
-DIALECT=org.hibernate.dialect.H2Dialect
-# Remove, if existing, the current webapp persistence descriptor.
-if [ -f $PERSISTENCE_PATH ]; then
-    rm -f $PERSISTENCE_PATH
-fi
-# Check H2 database.
-if [[ $BPMS_CONNECTION_DRIVER == *h2* ]]; 
-then
-    echo "Using H2 dialect for BPMS webapp"
-    DIALECT=org.hibernate.dialect.H2Dialect
-fi
-
-# Check MySQL database.
-if [[ $BPMS_CONNECTION_DRIVER == *mysql* ]] || [ "x$MYSQL_PORT_3306_TCP_ADDR" != "x" ]; 
-then
-    echo "Using MySQL dialect for BPMS webapp"
-    DIALECT=org.hibernate.dialect.MySQLDialect
-fi
-# Generate the webapp persistence descriptor using the dialect specified.
-sed -e "s;$DEFAULT_DIALECT;$DIALECT;" $PERSISTENCE_TEMPLATE_PATH > $PERSISTENCE_PATH
 
 # *********************************************
 # EAP standalone descriptor dynamic generation.
@@ -102,12 +67,53 @@ if [[ ! -z "$BPMS_CLUSTER_NAME" ]] ; then
     # Rebalance the cluster resource.
     echo "Rebalacing clustered resource '$BPMS_VFS_LOCK' in cluster '$BPMS_CLUSTER_NAME' using $BPMS_CLUSTER_NODE replicas"
     $HELIX_HOME/bin/helix-admin.sh --zkSvr $BPMS_ZOOKEEPER_SERVER --rebalance $BPMS_CLUSTER_NAME $BPMS_VFS_LOCK $BPMS_CLUSTER_NODE
-    
 fi
+
+
+# *******************
+# BPMS database configuration
+cp -rn $CONTAINER_CONFIG/modules/* $JBOSS_HOME/modules/system/layers/base
+ln -sf -t $JBOSS_HOME/modules/system/layers/base/com/mysql/jdbc/main /usr/share/java/mysql-connector-java.jar
+ln -sf -t $JBOSS_HOME/modules/system/layers/base/org/postgresql/jdbc/main /usr/share/java/postgresql-jdbc.jar
+
+echo -en "\nMYSQL_PORT_3306_TCP_ADDR = $MYSQL_PORT_3306_TCP_ADDR" >> /tmp/start-bpms.log
+echo -en "\nPOSTGRESQL_PORT_5432_TCP_ADDR = $POSTGRESQL_PORT_5432_TCP_ADDR" >> /tmp/start-bpms.log
+if [ "x$MYSQL_PORT_3306_TCP_ADDR" != "x" ]; then
+    JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=jdbc:mysql://$MYSQL_PORT_3306_TCP_ADDR:3306/jbpm -Djboss.bpms.driver=mysql "
+    JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=jbpm -Djboss.bpms.password=jbpm "
+    DIALECT=org.hibernate.dialect.MySQLDialect
+elif [ "x$POSTGRESQL_PORT_5432_TCP_ADDR" != "x" ]; then
+    JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=jdbc:postgresql://$POSTGRESQL_PORT_5432_TCP_ADDR:5432/jbpm -Djboss.bpms.driver=postgresql "
+    JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=jbpm -Djboss.bpms.password=jbpm "
+    DIALECT=org.hibernate.dialect.PostgreSQLDialect
+else
+
+    # support for external RDBMSs that are not linked through docker
+    JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=\"$BPMS_CONNECTION_URL\" -Djboss.bpms.driver=\"$BPMS_CONNECTION_DRIVER\" "
+    JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=\"$BPMS_CONNECTION_USER\" -Djboss.bpms.password=\"$BPMS_CONNECTION_PASSWORD\" "
+    if [[ $BPMS_CONNECTION_DRIVER == *mysql* ]]; then
+        DIALECT=org.hibernate.dialect.MySQLDialect
+    elif [[ $BPMS_CONNECTION_DRIVER == *postgresql* ]]; then
+        DIALECT=org.hibernate.dialect.PostgreSQLDialect
+    fi
+fi
+echo -en "\nDIALECT = $DIALECT" >> /tmp/start-bpms.log
+
+PERSISTENCE_TEMPLATE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
+PERSISTENCE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml
+# Remove, if existing, the current webapp persistence descriptor.
+if [ -f $PERSISTENCE_PATH ]; then
+    rm -f $PERSISTENCE_PATH
+fi
+
+# Generate the webapp persistence descriptor using the dialect specified.
+sed -e "s;$DEFAULT_DIALECT;$DIALECT;" $PERSISTENCE_TEMPLATE_PATH > $PERSISTENCE_PATH
+# *******************
+
 
 # *******************
 # OPTIONAL REMOTE MESSAGING BROKER
-echo -en "HQ0_PORT_5445_TCP_ADDR = $HQ0_PORT_5445_TCP_ADDR" >> /tmp/start-bpms.log
+echo -en "\n\nHQ0_PORT_5445_TCP_ADDR = $HQ0_PORT_5445_TCP_ADDR" >> /tmp/start-bpms.log
 if [ "x$HQ0_PORT_5445_TCP_ADDR" != "x" ]; then
     echo -en "\nhq0-bpmsuite container has been linked.  Will use this remote HQ broker\n" >> /tmp/start-bpms.log
     echo -en "\nhornetq.remote.address = $HQ0_PORT_5445_TCP_ADDR ; hornetq.remote.port = $HQ0_PORT_5445_TCP_PORT\n" >> /tmp/start-bpms.log
@@ -120,7 +126,7 @@ if [ "x$HQ0_PORT_5445_TCP_ADDR" != "x" ]; then
     sleep 15
 
     # execute the CLI that tunes the messaging subsystem
-    $JBOSS_HOME/bin/jboss-cli.sh --connect --file=/opt/jboss/bpms/use_remote_hq_broker.cli >> /tmp/start-bpms.log 2>&1
+    $JBOSS_HOME/bin/jboss-cli.sh --connect --file=$CONTAINER_CONFIG/use_remote_hq_broker.cli >> /tmp/start-bpms.log 2>&1
     $JBOSS_HOME/bin/jboss-cli.sh --connect ":shutdown" >> /tmp/start-bpms.log 2>&1
 
     # remove orignal config that defines KIE related queues
@@ -144,7 +150,7 @@ fi
 
 # *******************
 # BPM PROFILE
-echo -en "\nEXEC_SERVER_PROFILE = $EXEC_SERVER_PROFILE\n" >> /tmp/start-bpms.log
+echo -en "\nEXEC_SERVER_PROFILE = $EXEC_SERVER_PROFILE\n\n" >> /tmp/start-bpms.log
 if [ "x$EXEC_SERVER_PROFILE" != "x" ]; then
     cp $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web-exec-server.xml $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web.xml
     BPM_PROFILE_ARGUMENTS="-Dorg.kie.active.profile=exec-server"

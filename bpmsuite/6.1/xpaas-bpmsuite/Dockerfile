@@ -13,8 +13,14 @@ FROM jboss-eap:6.3
 ####### MAINTAINER ############
 MAINTAINER "JBoss XPaaS Team" "xpass-eng@redhat.com"
 
-####### ENVIRONEMNT ############
-ENV $JBOSS_HOME /opt/jboss/eap
+####### RDBMS DRIVERS ############
+USER root
+RUN yum install -y postgresql-jdbc mysql-connector-java
+
+
+#ENV JBOSS_HOME /opt/jboss/eap
+ENV CONTAINER_CONFIG /opt/jboss/bpms
+
 
 # BPM Suite 6.1 zip file
 ENV BPM_ZIP jboss-bpmsuite-6.1.0.ER3-deployable-eap6.x.zip
@@ -36,22 +42,24 @@ ENV BPMS_CONNECTION_PASSWORD sa
 ENV BPMS_VFS_LOCK bpms-vfs-lock
 # ENV BPMS_GIT_HOST // Set by default to the container's ip address
 ENV BPMS_GIT_PORT 9520
-ENV BPMS_GIT_DIR /opt/jboss/bpms/vfs
+ENV BPMS_GIT_DIR $CONTAINER_CONFIG/vfs
 # ENV BPMS_SSH_HOST // Set by default to the container's ip address
 ENV BPMS_SSH_PORT 9521
-ENV BPMS_INDEX_DIR /opt/jboss/bpms/index
-ENV BPMS_QUARTZ_PROPERTIES /opt/jboss/bpms/quartz-db.properties
+ENV BPMS_INDEX_DIR $CONTAINER_CONFIG/index
+ENV BPMS_QUARTZ_PROPERTIES $CONTAINER_CONFIG/quartz-db.properties
 # TODO: Docker best practices - Do not use passwords here
 ENV BPMS_CLUSTER_PASSWORD bpmsclustering
 ENV BPMS_CLUSTER_NODE 1
 ENV HELIX_VERSION 0.6.3
 ENV HELIX_HOME /opt/jboss/helix
 
+
 #######  Layer BPM Suite 6 on EAP ####
 ADD ./resources /resources
 RUN unzip -o $BPM_ZIP_PATH -d /tmp/
 RUN cp -r /tmp/jboss-eap-6.3/* $JBOSS_HOME
 RUN rm -rf /tmp/jboss-eap-6.3
+RUN mkdir -p $CONTAINER_CONFIG/index $CONTAINER_CONFIG/vfs
 
 ####### CUSTOM JBOSS USER ############
 # Switchback to jboss user
@@ -63,32 +71,29 @@ tar -xvf helix.tar; \
 mv helix-core-$HELIX_VERSION helix; \ 
 rm helix.tar
 
-####### EAP MYSQL MODULE ############
-ADD bin/mysql_module.tar.gz $JBOSS_HOME/modules/system/layers/base
 
 ####### BPMS CUSTOM CONFIGURATION ############
-# Create the BPMS directories inside /opt/jboss
-RUN mkdir -p /opt/jboss/bpms/index /opt/jboss/bpms/vfs
-
 # There is an issue in Docker with ADD command.
 # When a file is added into the container's filesystem, the file owner is always root, instead of the current running user.
 # See https://github.com/docker/docker/issues/5110
 # The workaround is doing a chown using root user and then switchback to jboss user.
+ADD etc/modules $CONTAINER_CONFIG/modules
 ADD etc/standalone-full-ha.xml.template $JBOSS_HOME/standalone/configuration/standalone-full-ha.xml.template
 ADD etc/bpms-users.properties $JBOSS_HOME/standalone/configuration/bpms-users.properties
 ADD etc/bpms-roles.properties $JBOSS_HOME/standalone/configuration/bpms-roles.properties
 ADD etc/persistence.xml.template $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
-ADD etc/start-bpms.sh /opt/jboss/bpms/start-bpms.sh
-ADD etc/quartz-db.properties /opt/jboss/bpms/quartz-db.properties
-ADD etc/use_remote_hq_broker.cli /opt/jboss/bpms/use_remote_hq_broker.cli
+ADD etc/start-bpms.sh $CONTAINER_CONFIG/start-bpms.sh
+ADD etc/quartz-db.properties $CONTAINER_CONFIG/quartz-db.properties
+ADD etc/use_remote_hq_broker.cli $CONTAINER_CONFIG/use_remote_hq_broker.cli
 USER root
-RUN chown -R jboss:jboss /opt/jboss 
+RUN chown -R jboss:jboss $JBOSS_HOME
+RUN chown -R jboss:jboss $CONTAINER_CONFIG
 
 # Assign a shell to jboss user so as to allow switching to this user
 RUN usermod -s /bin/bash jboss
 
 # Add the executable flag.
-RUN chmod +x /opt/jboss/bpms/start-bpms.sh
+RUN chmod +x $CONTAINER_CONFIG/start-bpms.sh
 
 # Expose BPMS  git & ssh ports
 EXPOSE 9520 9521

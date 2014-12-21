@@ -22,7 +22,7 @@
 
 CONTAINER_NAME="xpaas-bpmsuite"
 IMAGE_NAME="redhat/xpaas-bpmsuite"
-IMAGE_TAG="6.1"
+IMAGE_TAG="latest"
 CONNECTION_DRIVER=h2
 CONNECTION_URL="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 CONNECTION_USERNAME=SA
@@ -56,6 +56,9 @@ while [ "$1" != "" ]; do
                                 ;;
         -useLinkedMySQL ) 
                                 USE_LINKED_MYSQL=TRUE
+                                ;;
+        -useLinkedPostgreSQL ) 
+                                USE_LINKED_POSTGRESQL=TRUE
                                 ;;
         -useSharedBPMFilesystem ) 
                                 USE_SHARED_BPM_FILESYSTEM=TRUE
@@ -95,6 +98,9 @@ fi
 if [ x$USE_LINKED_MYSQL == xTRUE ]; then
   echo "** USE_LINKED_MYSQL: $USE_LINKED_MYSQL"
   dockerrun="$dockerrun --link=mysql-bpmsuite:mysql"
+elif [ x$USE_LINKED_POSTGRESQL == xTRUE ]; then
+  echo "** USE_LINKED_POSTGRESQL: $USE_LINKED_POSTGRESQL"
+  dockerrun="$dockerrun --link=postgresql-bpmsuite:postgresql"
 else
   echo "** BPMS connection driver: $CONNECTION_DRIVER"
   echo "** BPMS connection URL: $CONNECTION_URL"
@@ -131,7 +137,7 @@ if [ x$EXEC_SERVER_PROFILE == xTRUE ]; then
 else
     echo "BPM Console available at:  http://$ip_bpmsuite:8080/business-central"
 fi
-echo "Log into your new $CONTAINER_NAME container by executing: nsenter -m -u -n -i -p -t $docker_pid /bin/bash"
+echo "Log into your new $CONTAINER_NAME container by executing: sudo nsenter -m -u -n -i -p -t $docker_pid /bin/bash"
 echo "Linked containers as follows:"
 docker inspect -f "{{ .HostConfig.Links }}" $CONTAINER_NAME
 exit 0

@@ -41,10 +41,15 @@ Messaging brokers are configured in an active/passive high availability configur
 The brokers discover each other in a cloud friendly manner using the {fileping} discovery protocol provided by jgroups.
 The FILE_PING protocol could be swapped out using any of its subclasses depending on the target cloud environment: RACKSPACE_PING, S3_PING, SWIFT_PING or GOOGLE_PING
 
-. `External RDBMS`
+. `Containerized BPM RDBMS`
 +
-This project includes a `mysql` container that is seeded with jbpm and dashbuilder tables.
-At runtime, the BPM components detect the presence of the mysql container and automatically create a JDBC connection pool to this remote environment.
+This project includes the following RDBMS containers seeded with jbpm and dashbuilder tables and users:
++
+.. `mariadb`
+.. `postgresql`
+
++
+At runtime, the BPM components detect the presence of either of these RDBMS containers and automatically create an appropriate JDBC connection pool.
 
 . `Latest BPM Suite 6 Engineering Release`
 +
@@ -71,10 +76,10 @@ In a cloud environment, this container would be replaced with the storage techno
 In an on-premise enivornment, this container would be replaced with a clustered file system (ie:  {rhstorage}) and a SAN.
 The operating system used is in this container is RHEL 7.
 
-. `mysql-bpmsuite`
+. `RDBMS containers`
 +
-Docker container that includes the version of mysql provided by RHEL 7.
-The mysql RDBMS is seeded with a `jbpm` database needed for execution of the process engines and dashbuilder functionality at runtime.
+Choose from either `mariadb` or `postgresql`.
+Both containers are built on RHEL7 and both are seeded with a `jbpm` database needed for execution of the process engines and dashbuilder functionality at runtime.
 
 . `hq*-bpmsuite`
 +
@@ -87,8 +92,16 @@ The FILE_PING protocol could be swapped out using any of its subclasses dependin
 The operating system used in this container is RHEL 7.
 
 . `bpm-ui`
++
+Docker container that includes the latest engineering release of BPM Suite 6 configured in the `user interface` profile.
+Specifically, the BPM Console of BPM Suite 6 is enabled.
+However, both the jbpm and drools execution servers are disabled.
 
 . `bpm-exec-server-*`
++
+Docker container that includes the latest engineering release of BPM Suite 6 configured in the `execution-server` profile.
+Specifically, bothe the jbpm and drools execution servers are enabled.
+However, the BPM Console of BPM Suite 6 is disabled.
 
 == Prerequisites
 
@@ -113,7 +126,8 @@ If you are a partner of Red Hat, please contact us to gain access to the latest 
 === Add `docker` group to operating system user
 
 This documentation assumes existence of an operating system user called `jboss`.
-To avoid having to execute all docker commands as root, the `docker` group should own the docker process and should also be added as a group to the `jboss` user:
+To avoid having to execute all docker commands as root, the `docker` group should own the docker process and should also be added as a group to the `jboss` user.
+Execute the following in your RHEL7 host operating system:
 
 . su - root
 . chgrp docker /var/run/docker.sock
@@ -146,6 +160,7 @@ NOTE: For the purposes of this documentation, the following directory path will 
 cd $BPM_DOCKER
 docker build --rm=true -t storage-bpmsuite storage-bpmsuite
 docker build --rm=true -t mysql-bpmsuite mysql-bpmsuite
+docker build --rm=true -t postgresql-bpmsuite crunchy-node
 docker build --rm=true -t hq-bpmsuite hq-bpmsuite
 cd xpaas-bpmsuite
 ./build.sh
