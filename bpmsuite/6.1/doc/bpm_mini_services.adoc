@@ -121,27 +121,37 @@ However, the BPM Console of BPM Suite 6 is disabled.
 
 == Prerequisites
 
-. Modern development machine with at least 8G RAM and 4 cores
+. Development machine with at least 8G RAM and 4 cores
 . RHEL 7 with an active Red Hat Network subscription
 +
-The Docker images built by this project are currently not available in the Docker repository/registry.
-Subsequently, this project requires building of these docker images.
-The build process requires an active Red Hat Network subscription with entitlements to RHEL 7.
-Thus, the host operating system used to build these images must be RHEL 7.
+The RHEL7 based Docker images built by this project are currently not available in the Docker repository/registry.
+Subsequently, this project requires building of these docker images from the Dockerfiles included in this project.
+The build process requires a RHEL7 host with an active Red Hat Network subscription to RHEL7 entitlements.
 
 . Docker
 +
 The host RHEL 7 operating system must have the latest `docker` package installed and enabled.
+Be sure to update your RHEL7 operating system frequently; the docker packages are being updated quite often.
 
 . BPM Suite 6.1 Engineering Release
 +
 If you are a partner of Red Hat, please contact us to gain access to the latest engineering release of BPM Suite 6.1 .
 
+. git
+
 == Build Procedure
+
+=== `jboss` operating system user
+This documentation assumes existence of an operating system user called `jboss`.
+Execute the following as root in your RHEL7 host to create this user if it doesn't already exist:
+
+-----
+useradd -u 1000 -g users -m -d /home/jboss jboss
+-----
 
 === Add `docker` group to operating system user
 
-This documentation assumes existence of an operating system user called `jboss`.
+
 To avoid having to execute all docker commands as root, the `docker` group should own the docker process and should also be added as a group to the `jboss` user.
 Execute the following in your RHEL7 host operating system:
 
