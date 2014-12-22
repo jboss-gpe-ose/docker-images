@@ -62,6 +62,22 @@ This project keeps pace with the latest engineering releases of BPM Suite 6.1
 Specifically, integration with Crunchy Data's {postgresqlpod}
 
 . `Integration with OSE 3`
++
+Orchestrate this deployment topology as one or more kubernets pods in OSE3.
+
+. `JBoss EWS container`
++
+Introduce JBoss EWS container configured with mod_cluster for load-balancing/fail-over of bpm-exec-server nodes.
+
+. `deployment-descriptor configuration`
++
+The `bpm-exec-server-*` nodes should allow for modified deployment-descriptors.
+
+. `bpm-exec-server-* footprint reduction`
++
+Currently, the size of the `bpm-exec-server-*` nodes have a memory footprint of just under 1G.
+This should be reduced to (much) less than 500MB so as to fit comfortably within a `small` OpenShift gear.
+
 
 
 == Production Deployment Topology
@@ -79,7 +95,7 @@ The operating system used is in this container is RHEL 7.
 . `RDBMS containers`
 +
 Choose from either `mariadb` or `postgresql`.
-Both containers are built on RHEL7 and both are seeded with a `jbpm` database needed for execution of the process engines and dashbuilder functionality at runtime.
+Both containers are built on RHEL7 and both are seeded with the `jbpm` database needed for execution of the process engines and dashbuilder functionality at runtime.
 
 . `hq*-bpmsuite`
 +
@@ -162,14 +178,19 @@ docker build --rm=true -t storage-bpmsuite storage-bpmsuite
 docker build --rm=true -t mysql-bpmsuite mysql-bpmsuite
 docker build --rm=true -t postgresql-bpmsuite crunchy-node
 docker build --rm=true -t hq-bpmsuite hq-bpmsuite
-cd xpaas-bpmsuite
-./build.sh
+docker build --rm=true -t redhat/xpaas-bpmsuite xpaas-bpmsuite
 -----
 
-. Execute the following to view the newly built images in the local Docker repository of your RHEL 7 host.
+. Execute `sudo docker images` to view the newly built images in the local Docker repository of your RHEL 7 host.
 +
 -----
-docker images
+[root@carbon ~]# docker images
+REPOSITORY              TAG     IMAGE ID      CREATED     VIRTUAL SIZE
+postgresql-bpmsuite     latest  94c41ac4c6aa  1 day ago   434.4 MB
+mysql-bpmsuite          latest  f55ea100e8ca  2 days ago  623 MB
+redhat/xpaas-bpmsuite   latest  fucc38f55cd5  2 days ago  1.582 GB
+hq-bpmsuite             latest  d682c3e8e559  4 days ago  833.5 MB
+storage-bpmsuite        latest  0f63ee380988  4 days ago  301.5 MB
 -----
 
 == Startup Procedure
@@ -203,7 +224,20 @@ docker inspect --format '{{ .State.Pid }}' hq0-bpmsuite
 nsenter -m -u -n -i -p -t 8034 /bin/bash
 -----
 
-=== mysql-bpmsuite
+=== BPM RDBMSs
+
+Start either of these RDBMs:
+
+==== postgresql-bpmsuite
+
+. Run one `postgresql-bpmsuite` container
++
+-----
+docker run -d --name="postgresql-bpmsuite" postgresql-bpmsuite
+-----
+
+
+==== mysql-bpmsuite
 . Run one `mysql-bpmsuite` container
 +
 -----
@@ -251,7 +285,13 @@ Provides Execution Server and no BPM Console
 ==== Start `UI-Profile` `xpaas-bpmsuite` container:
 
 -----
-xpaas-bpmsuite/start.sh -c bpm-ui -useRemoteHQ -useLinkedMySQL -useSharedBPMFilesystem
+xpaas-bpmsuite/start.sh -c bpm-ui -useRemoteHQ -useSharedBPMFilesystem -useLinkedMySQL
+-----
+
+or
+
+-----
+xpaas-bpmsuite/start.sh -c bpm-ui -useRemoteHQ -useSharedBPMFilesystem -useLinkedPostgreSQL
 -----
 
 The output of the above command will be similar to the following:
