@@ -81,6 +81,7 @@ ADD etc/modules $CONTAINER_CONFIG/modules
 ADD etc/standalone-full-ha.xml.template $JBOSS_HOME/standalone/configuration/standalone-full-ha.xml.template
 ADD etc/bpms-users.properties $JBOSS_HOME/standalone/configuration/bpms-users.properties
 ADD etc/bpms-roles.properties $JBOSS_HOME/standalone/configuration/bpms-roles.properties
+ADD etc/mgmt-users.properties $JBOSS_HOME/standalone/configuration/mgmt-users.properties
 ADD etc/persistence.xml.template $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
 ADD etc/start-bpms.sh $CONTAINER_CONFIG/start-bpms.sh
 ADD etc/quartz-db.properties $CONTAINER_CONFIG/quartz-db.properties
@@ -95,8 +96,8 @@ RUN usermod -s /bin/bash jboss
 # Add the executable flag.
 RUN chmod +x $CONTAINER_CONFIG/start-bpms.sh
 
-# Expose BPMS  git & ssh ports
-EXPOSE 9520 9521
+# Expose CLI as well as BPMS git & ssh ports
+EXPOSE 9999 9520 9521
 
 # Switchback to jboss user
 USER jboss

@@ -32,6 +32,8 @@ ADD ./configure-jgroups.cli /opt/hq-bpmsuite/config/configure-jgroups.cli
 ADD ./configure-eap.cli /opt/hq-bpmsuite/config/configure-eap.cli
 ADD ./supervisord.conf /etc/supervisord.conf
 
+ADD ./mgmt-users.properties /opt/jboss/eap/standalone/configuration/mgmt-users.properties
+
 # Set script permissions
 RUN chmod 755 /opt/hq-bpmsuite/config/*
 

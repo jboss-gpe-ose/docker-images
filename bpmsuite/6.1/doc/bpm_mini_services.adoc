@@ -229,10 +229,14 @@ docker inspect --format '{{ .State.Pid }}' hq0-bpmsuite
 -----
 
 . log into the hq0-bpmsuite container
-+xpaas-bpmsuite/start.sh -c bpm-ui -useRemoteHQ -useLinkedMySQL -useSharedBPMFilesystem
+
 -----
 nsenter -m -u -n -i -p -t 8034 /bin/bash
 -----
+
+==== Hornetq Container Access and Administration
+
+. `JBoss EAP Management User Credentials`  :   admin / brms
 
 === BPM RDBMSs
 
@@ -308,15 +312,16 @@ The output of the above command will be similar to the following:
 
 -----
 Server starting at: 172.17.0.2
-BPM Exec Server available at: http://172.17.0.28:8080/business-central/rest
-kie-execution-server available at http://172.17.0.28:8080/kie-execution-server
-Log into your new xpaas-bpmsuite container by executing: nsenter -m -u -n -i -p -t 17997 /bin/bash
+BPM Console available at: http://172.17.0.28:8080/business-central
+Bash command line of your new xpaas-bpmsuite container available by executing: nsenter -m -u -n -i -p -t 17997 /bin/bash
 Linked containers as follows:
 [/hq0-bpmsuite:/xpaas-bpmsuite/hq0 /mysql-bpmsuite:/xpaas-bpmsuite/mysql]
 -----
 
 The above output is valuable as it indicates the URL to access the BPM Console of BPM Suite 6.
-It also provides the command to obtain shell access to the running bpm container
+It also provides the command to obtain shell access to the running bpm container.
+
+
 
 ==== Start `Exec-Server-Profile` `xpaas-bpmsuite` container:
 
@@ -333,9 +338,13 @@ The above output is valuable as it indicates the URL to invoke the RESTFul API o
 It also provides the command to obtain shell access to the running bpm container
 
 
+==== BPM Container Access and Administration
+
+. `JBoss EAP Management User Credentials`  :   admin / brms
+
 == Research
 
-. Needed system properties
+. Additional system properties
 .. jbpm.audit.jms.enabled
 .. jbpm.audit.jms.transacted
 .. jbpm.audit.jms.connection.factory
@@ -346,7 +355,6 @@ It also provides the command to obtain shell access to the running bpm container
 .. org.uberfire.nio.git.daemon.enabled
 .. org.uberfire.nio.git.ssh.enabled
 .. org.uberfire.nio.git.ssh.cert.dir
-.. org.guvnor.m2repo.dir
 
 .
 

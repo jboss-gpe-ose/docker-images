@@ -137,7 +137,7 @@ if [ x$EXEC_SERVER_PROFILE == xTRUE ]; then
 else
     echo "BPM Console available at:  http://$ip_bpmsuite:8080/business-central"
 fi
-echo "Log into your new $CONTAINER_NAME container by executing: sudo nsenter -m -u -n -i -p -t $docker_pid /bin/bash"
+echo "Bash command line to your new $CONTAINER_NAME container available by executing: sudo nsenter -m -u -n -i -p -t $docker_pid /bin/bash"
 echo "Linked containers as follows:"
 docker inspect -f "{{ .HostConfig.Links }}" $CONTAINER_NAME
 exit 0
