@@ -146,7 +146,7 @@ This documentation assumes existence of an operating system user called `jboss`.
 Execute the following as root in your RHEL7 host to create this user if it doesn't already exist:
 
 -----
-useradd -u 1000 -g users -m -d /home/jboss jboss
+useradd -u 185 -g 185 -m -d /home/jboss jboss
 -----
 
 === Add `docker` group to operating system user
@@ -221,17 +221,10 @@ docker run -d --name="hq0-bpmsuite" -e HORNETQ_NODE=hornetq0 -e HORNETQ_BACKUP_N
 docker run -d --name="hq1-bpmsuite" -e HORNETQ_NODE=hornetq1 -e HORNETQ_BACKUP_NODE=hornetq0 --volumes-from=storage-bpmsuite hq-bpmsuite
 -----
 
-.  identify PID of hq0-bpmsuite container
+. log into the hq0-bpmsuite container
 +
 -----
-docker inspect --format '{{ .State.Pid }}' hq0-bpmsuite
-8034
------
-
-. log into the hq0-bpmsuite container
-
------
-nsenter -m -u -n -i -p -t 8034 /bin/bash
+nsenter -m -u -n -i -p -t  `docker inspect --format '{{ .State.Pid }}' hq0-bpmsuite` /bin/bash
 -----
 
 ==== Hornetq Container Access and Administration

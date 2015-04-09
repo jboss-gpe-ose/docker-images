@@ -1,51 +1,19 @@
 #!/bin/bash
 
-. /opt/hq-bpmsuite/config/environment
-. /opt/hq-bpmsuite/config/env.sh
+DOCKER_IP=$(ip addr show eth0 | grep -E '^\s*inet' | grep -m1 global | awk '{ print $2 }' | sed 's|/.*||')
 
-IPADDR=$(ip a s | sed -ne '/127.0.0.1/!{s/^[ \t]*inet[ \t]*\([0-9.]\+\)\/.*$/\1/p}')
+echo -en "STARTING HQ CONTAINER\nDOCKER_IP = $DOCKER_IP\n" > $START_LOG_FILE
+echo -en "JBOSS_HOME = $JBOSS_HOME\n" >> $START_LOG_FILE
+echo -en "JBOSS_CONFIG = $JBOSS_CONFIG\n" >> $START_LOG_FILE
+echo -en "HornetQ node = $HORNETQ_NODE\n" >> $START_LOG_FILE
+echo -en "HornetQ backup node = $HORNETQ_BACKUP_NODE\n" >> $START_LOG_FILE
 
-echo "IPADDR = $IPADDR"
-echo "HornetQ node = $HORNETQ_NODE"
-echo "HornetQ backup node = $HORNETQ_BACKUP_NODE"
-
-# Sanity checks
-if [ ! -d $SERVER_INSTALL_DIR/$SERVER_NAME ]
-then
-  echo "EAP not installed at $SERVER_INSTALL_DIR/$SERVER_NAME."
-  exit 0
-fi
-
-CLEAN=false
-
-for var in $@
-do
-    case $var in
-        --clean)
-            CLEAN=true
-            ;;
-        --admin-only)
-            ADMIN_ONLY=--admin-only 
-    esac
-done
-
-# Clean data, log and temp directories
-if [ "$CLEAN" = "true" ] 
-then
-    rm -rf $SERVER_INSTALL_DIR/$SERVER_NAME/standalone/data $SERVER_INSTALL_DIR/$SERVER_NAME/standalone/log $SERVER_INSTALL_DIR/$SERVER_NAME/standalone/tmp
-fi
-
-# ensure all jboss directories are still owned by jboss user
-chown -R jboss:jboss $SERVER_INSTALL_DIR/$SERVER_NAME
-
-# switch to jboss user to start JVM
-su - jboss <<EOF
+JBOSS_COMMON_ARGS="--server-config=$JBOSS_CONFIG -Djboss.bind.address=$DOCKER_IP -Djboss.bind.address.management=$DOCKER_IP -Djboss.bind.address.insecure=$DOCKER_IP -Djboss.node.name=server-$DOCKER_IP"
+HORNETQ_ARGS="-Dhornetq.node=$HORNETQ_NODE -Dhornetq.backup.node=$HORNETQ_BACKUP_NODE"
 
 # customize size of JVM heap
-JAVA_OPTS="-Xms128m -Xmx512m -XX:MaxPermSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=$JBOSS_MODULES_SYSTEM_PKGS -Djava.awt.headless=true -Djboss.modules.policy-permissions=true"
+JAVA_OPTS="-Xms128m -Xmx512m -Djava.net.preferIPv4Stack=true -Djava.awt.headless=true -Djboss.modules.policy-permissions=true"
 export JAVA_OPTS
 
 # start jboss hornetq
-nohup ${SERVER_INSTALL_DIR}/${SERVER_NAME}/bin/standalone.sh -Djboss.bind.address=$IPADDR -Djboss.bind.address.management=$IPADDR -Djboss.bind.address.insecure=$IPADDR -Djboss.node.name=server-$IPADDR -Dhornetq.node=$HORNETQ_NODE -Dhornetq.backup.node=$HORNETQ_BACKUP_NODE --server-config=$JBOSS_CONFIG $ADMIN_ONLY &> /tmp/eap_out.log &
-EOF
-echo "EAP started"
+nohup $JBOSS_HOME/bin/standalone.sh $JBOSS_COMMON_ARGS $HORNETQ_ARGS >> $START_LOG_FILE 2>&1
