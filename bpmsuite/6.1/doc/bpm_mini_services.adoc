@@ -177,7 +177,7 @@ NOTE: For the purposes of this documentation, the following directory path will 
 === Download BPM Suite 6 Engineering Release
 
 . If you are partner of Red Hat, please contact us to gain access to the latest engineering releases of BPM Suite 6.1 .
-. Once downloaded, move the BPM Suite 6.1 ER zip file to $BPM_DOCKER/xpaas-bpmsuite/resources
+. Once downloaded, move the BPM Suite 6.1 ER zip file to $BPM_DOCKER/bpm-bpmsuite/resources
 
 === Build the images
 . Execute the following on the host RHEL 7 operating system:
@@ -188,7 +188,7 @@ docker build --rm=true -t storage-bpmsuite storage-bpmsuite
 docker build --rm=true -t mysql-bpmsuite mysql-bpmsuite
 docker build --rm=true -t postgresql-bpmsuite crunchy-node
 docker build --rm=true -t hq-bpmsuite hq-bpmsuite
-docker build --rm=true -t redhat/xpaas-bpmsuite xpaas-bpmsuite
+docker build --rm=true -t bpm-bpmsuite bpm-bpmsuite
 -----
 
 . Execute `sudo docker images` to view the newly built images in the local Docker repository of your RHEL 7 host.
@@ -198,7 +198,7 @@ docker build --rm=true -t redhat/xpaas-bpmsuite xpaas-bpmsuite
 REPOSITORY              TAG     IMAGE ID      CREATED     VIRTUAL SIZE
 postgresql-bpmsuite     latest  94c41ac4c6aa  1 day ago   434.4 MB
 mysql-bpmsuite          latest  f55ea100e8ca  2 days ago  623 MB
-redhat/xpaas-bpmsuite   latest  fucc38f55cd5  2 days ago  1.582 GB
+bpm-bpmsuite            latest  fucc38f55cd5  2 days ago  1.582 GB
 hq-bpmsuite             latest  d682c3e8e559  4 days ago  833.5 MB
 storage-bpmsuite        latest  0f63ee380988  4 days ago  301.5 MB
 -----
@@ -251,19 +251,10 @@ docker run -d --name="postgresql-bpmsuite" postgresql-bpmsuite
 docker run -d --name="mysql-bpmsuite" mysql-bpmsuite
 -----
 
-. identify PID of mysql-bpmsuite container
-+
------
-docker inspect --format '{{ .State.Pid }}' mysql-bpmsuite
-29127
------
-
 . log into the mysql RDBMS and view the tables in the jbpm database
 +
 -----
-nsenter -m -u -n -i -p -t 29127 /bin/bash
-[root@ed4f818f74b4 /]# mysql -u jbpm -p jbpm
-MariaDB [jbpm]> show tables;
+nsenter -m -u -n -i -p -t  `docker inspect --format '{{ .State.Pid }}' mysql-bpmsuite` /bin/bash
 -----
 
 . get the ip address of the `mysql-bpmsuite` container
@@ -274,11 +265,11 @@ docker inspect mysql-bpmsuite | grep IPAddress | cut -d '"' -f 4
 -----
 
 === xpaas_bpmsuite
-Once both the `mysql-bpmsuite` and `hq0-bpmsuite` containers are running, the `xpaas-bpmsuite` containers can be run.
-The `mysql-bpmsuite` and `hq0-bpmsuite` containers are linked to the `xpaas-bpmsuite` containers.
-By doing so, the `xpaas-bpmsuite` containers are able to detect at runtime the needed information about its linked containers to connect to them.
+Once both the `mysql-bpmsuite` and `hq0-bpmsuite` containers are running, the `bpm-bpmsuite` containers can be run.
+The `mysql-bpmsuite` and `hq0-bpmsuite` containers are linked to the `bpm-bpmsuite` containers.
+By doing so, the `bpm-bpmsuite` containers are able to detect at runtime the needed information about its linked containers to connect to them.
 
-There are two types of `xpaas-bpmsuite` containers:
+There are two types of `bpm-bpmsuite` containers:
 
 . `ui-profile` :
 +
@@ -289,16 +280,16 @@ Default.  Provides BPM Console and no Execution Server
 Provides Execution Server and no BPM Console
 
 
-==== Start `UI-Profile` `xpaas-bpmsuite` container:
+==== Start `UI-Profile` `bpm-bpmsuite` container:
 
 -----
-xpaas-bpmsuite/start.sh -c bpm-ui -useRemoteHQ -useSharedBPMFilesystem -useLinkedMySQL
+bpm-bpmsuite/bin/start.sh -c bpm-ui -useRemoteHQ -useSharedBPMFilesystem -useLinkedMySQL
 -----
 
 or
 
 -----
-xpaas-bpmsuite/start.sh -c bpm-ui -useRemoteHQ -useSharedBPMFilesystem -useLinkedPostgreSQL
+bpm-bpmsuite/bin/start.sh -c bpm-ui -useRemoteHQ -useSharedBPMFilesystem -useLinkedPostgreSQL
 -----
 
 The output of the above command will be similar to the following:
@@ -306,9 +297,9 @@ The output of the above command will be similar to the following:
 -----
 Server starting at: 172.17.0.2
 BPM Console available at: http://172.17.0.28:8080/business-central
-Bash command line of your new xpaas-bpmsuite container available by executing: nsenter -m -u -n -i -p -t 17997 /bin/bash
+Bash command line of your new bpm-bpmsuite container available by executing: nsenter -m -u -n -i -p -t 17997 /bin/bash
 Linked containers as follows:
-[/hq0-bpmsuite:/xpaas-bpmsuite/hq0 /mysql-bpmsuite:/xpaas-bpmsuite/mysql]
+[/hq0-bpmsuite:/bpm-bpmsuite/hq0 /mysql-bpmsuite:/bpm-bpmsuite/mysql]
 -----
 
 The above output is valuable as it indicates the URL to access the BPM Console of BPM Suite 6.
@@ -316,10 +307,10 @@ It also provides the command to obtain shell access to the running bpm container
 
 
 
-==== Start `Exec-Server-Profile` `xpaas-bpmsuite` container:
+==== Start `Exec-Server-Profile` `bpm-bpmsuite` container:
 
 -----
-xpaas-bpmsuite/start.sh -c bpm-exec-server-0 -useRemoteHQ -useLinkedMySQL -useSharedBPMFilesystem -execServer
+bpm-bpmsuite/bin/start.sh -c bpm-exec-server-0 -useRemoteHQ -useLinkedMySQL -useSharedBPMFilesystem -execServer
 -----
 
 The output of the above command will be similar to the following:

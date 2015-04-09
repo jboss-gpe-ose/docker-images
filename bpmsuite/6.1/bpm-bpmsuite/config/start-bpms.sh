@@ -1,13 +1,11 @@
 #!/bin/sh
 
-JBOSS_HOME=/opt/jboss/eap
-CONTAINER_CONFIG=/opt/jboss/bpms
-DEFAULT_DIALECT=org.hibernate.dialect.H2Dialect
-DIALECT=org.hibernate.dialect.H2Dialect
-
 DOCKER_IP=$(ip addr show eth0 | grep -E '^\s*inet' | grep -m1 global | awk '{ print $2 }' | sed 's|/.*||')
 
-echo -en "DOCKER_IP = $DOCKER_IP\n" > /tmp/start-bpms.log
+echo -en "STARTING HQ CONTAINER\nDOCKER_IP = $DOCKER_IP\n" > $START_LOG_FILE
+echo -en "JBOSS_HOME = $JBOSS_HOME\n" >> $START_LOG_FILE
+echo -en "JBOSS_CONFIG = $JBOSS_CONFIG\n" >> $START_LOG_FILE
+
 
 JBOSS_COMMON_ARGS="-Djboss.bind.address=$DOCKER_IP -Djboss.bind.address.management=$DOCKER_IP "
 JBOSS_BPMS_DB_ARGUMENTS=
@@ -76,8 +74,8 @@ cp -rn $CONTAINER_CONFIG/modules/* $JBOSS_HOME/modules/system/layers/base
 ln -sf -t $JBOSS_HOME/modules/system/layers/base/com/mysql/jdbc/main /usr/share/java/mysql-connector-java.jar
 ln -sf -t $JBOSS_HOME/modules/system/layers/base/org/postgresql/jdbc/main /usr/share/java/postgresql-jdbc.jar
 
-echo -en "\nMYSQL_PORT_3306_TCP_ADDR = $MYSQL_PORT_3306_TCP_ADDR" >> /tmp/start-bpms.log
-echo -en "\nPOSTGRESQL_PORT_5432_TCP_ADDR = $POSTGRESQL_PORT_5432_TCP_ADDR" >> /tmp/start-bpms.log
+echo -en "\nMYSQL_PORT_3306_TCP_ADDR = $MYSQL_PORT_3306_TCP_ADDR" >> $START_LOG_FILE
+echo -en "\nPOSTGRESQL_PORT_5432_TCP_ADDR = $POSTGRESQL_PORT_5432_TCP_ADDR" >> $START_LOG_FILE
 if [ "x$MYSQL_PORT_3306_TCP_ADDR" != "x" ]; then
     JBOSS_BPMS_DB_ARGUMENTS=" -Djboss.bpms.connection_url=jdbc:mysql://$MYSQL_PORT_3306_TCP_ADDR:3306/jbpm -Djboss.bpms.driver=mysql "
     JBOSS_BPMS_DB_ARGUMENTS="$JBOSS_BPMS_DB_ARGUMENTS -Djboss.bpms.username=jbpm -Djboss.bpms.password=jbpm "
@@ -97,7 +95,7 @@ else
         DIALECT=org.hibernate.dialect.PostgreSQLDialect
     fi
 fi
-echo -en "\nDIALECT = $DIALECT" >> /tmp/start-bpms.log
+echo -en "\nDIALECT = $DIALECT" >> $START_LOG_FILE
 
 PERSISTENCE_TEMPLATE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
 PERSISTENCE_PATH=$JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml
@@ -113,10 +111,10 @@ sed -e "s;$DEFAULT_DIALECT;$DIALECT;" $PERSISTENCE_TEMPLATE_PATH > $PERSISTENCE_
 
 # *******************
 # OPTIONAL REMOTE MESSAGING BROKER
-echo -en "\n\nHQ0_PORT_5445_TCP_ADDR = $HQ0_PORT_5445_TCP_ADDR" >> /tmp/start-bpms.log
+echo -en "\n\nHQ0_PORT_5445_TCP_ADDR = $HQ0_PORT_5445_TCP_ADDR" >> $START_LOG_FILE
 if [ "x$HQ0_PORT_5445_TCP_ADDR" != "x" ]; then
-    echo -en "\nhq0-bpmsuite container has been linked.  Will use this remote HQ broker\n" >> /tmp/start-bpms.log
-    echo -en "\nhornetq.remote.address = $HQ0_PORT_5445_TCP_ADDR ; hornetq.remote.port = $HQ0_PORT_5445_TCP_PORT\n" >> /tmp/start-bpms.log
+    echo -en "\nhq0-bpmsuite container has been linked.  Will use this remote HQ broker\n" >> $START_LOG_FILE
+    echo -en "\nhornetq.remote.address = $HQ0_PORT_5445_TCP_ADDR ; hornetq.remote.port = $HQ0_PORT_5445_TCP_PORT\n" >> $START_LOG_FILE
 
     # create REMOTE_MESSAGING_ARGUMENTS variable to be passed to jboss eap startup
     REMOTE_MESSAGING_ARGUMENTS="-Dhornetq.remote.address=$HQ0_PORT_5445_TCP_ADDR -Dhornetq.remote.port=$HQ0_PORT_5445_TCP_PORT"
@@ -126,8 +124,8 @@ if [ "x$HQ0_PORT_5445_TCP_ADDR" != "x" ]; then
     sleep 15
 
     # execute the CLI that tunes the messaging subsystem
-    $JBOSS_HOME/bin/jboss-cli.sh --connect --file=$CONTAINER_CONFIG/use_remote_hq_broker.cli >> /tmp/start-bpms.log 2>&1
-    $JBOSS_HOME/bin/jboss-cli.sh --connect ":shutdown" >> /tmp/start-bpms.log 2>&1
+    $JBOSS_HOME/bin/jboss-cli.sh --connect --file=$CONTAINER_CONFIG/use_remote_hq_broker.cli >> $START_LOG_FILE 2>&1
+    $JBOSS_HOME/bin/jboss-cli.sh --connect ":shutdown" >> $START_LOG_FILE 2>&1
 
     # remove orignal config that defines KIE related queues
     rm $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/bpms-jms.xml
@@ -139,10 +137,10 @@ fi
 # OPTIONAL SHARED VOLUME
 sharedDir=/opt/shared/bpm
 if [ -d "$sharedDir" ]; then
-    echo -en "\n$sharedDir exists.  BPM Suite 6 specific file systems will be written to this shared location\n" >> /tmp/start-bpms.log
+    echo -en "\n$sharedDir exists.  BPM Suite 6 specific file systems will be written to this shared location\n" >> $START_LOG_FILE
     SHARED_BPM_FILESYSTEM_ARGUMENTS="-Dorg.uberfire.nio.git.dir=$sharedDir/git -Dorg.guvnor.m2repo.dir=$sharedDir/artifact-repo -Dorg.uberfire.metadata.index.dir=$sharedDir/lucene"
 else
-    echo -en "\n$sharedDir does not exist.  BPM Suite 6 specific file systems will be written to defaults as per system properties in standalone-full-ha.xml\n" >> /tmp/start-bpms.log
+    echo -en "\n$sharedDir does not exist.  BPM Suite 6 specific file systems will be written to defaults as per system properties in standalone-full-ha.xml\n" >> $START_LOG_FILE
 fi
 
 # *******************
@@ -150,7 +148,7 @@ fi
 
 # *******************
 # BPM PROFILE
-echo -en "\nEXEC_SERVER_PROFILE = $EXEC_SERVER_PROFILE\n\n" >> /tmp/start-bpms.log
+echo -en "\nEXEC_SERVER_PROFILE = $EXEC_SERVER_PROFILE\n\n" >> $START_LOG_FILE
 if [ "x$EXEC_SERVER_PROFILE" != "x" ]; then
     cp $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web-exec-server.xml $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/web.xml
     BPM_PROFILE_ARGUMENTS="-Dorg.kie.active.profile=exec-server"
@@ -192,4 +190,4 @@ fi
 # customize size of JVM heap
 JAVA_OPTS="-Xms128m -Xmx1303m -XX:MaxPermSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=$JBOSS_MODULES_SYSTEM_PKGS -Djava.awt.headless=true -Djboss.modules.policy-permissions=true"
 export JAVA_OPTS
-$JBOSS_HOME/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS $SHARED_BPM_FILESYSTEM_ARGUMENTS $BPM_PROFILE_ARGUMENTS >> /tmp/start-bpms.log 2>&1
+$JBOSS_HOME/bin/standalone.sh --server-config=standalone-full-ha.xml $JBOSS_COMMON_ARGS $JBOSS_BPMS_DB_ARGUMENTS $JBOSS_BPMS_CLUSTER_ARGUMENTS $REMOTE_MESSAGING_ARGUMENTS $SHARED_BPM_FILESYSTEM_ARGUMENTS $BPM_PROFILE_ARGUMENTS >> $START_LOG_FILE 2>&1

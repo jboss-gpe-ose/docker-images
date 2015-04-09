@@ -1,24 +1,26 @@
 FROM ce-registry.usersys.redhat.com/jboss-eap6/eap:6.4
+MAINTAINER "JA Bride"
 
-####### MAINTAINER ############
-MAINTAINER "JBoss XPaaS Team" "xpass-eng@redhat.com"
+# Expose CLI as well as BPMS git & ssh ports
+EXPOSE 9999 9520 9521
 
 ####### RDBMS DRIVERS ############
 USER root
 RUN yum install -y postgresql-jdbc mysql-connector-java iproute && yum clean all -y
 
-ENV CONTAINER_CONFIG /opt//bpms
-
+ENV CONTAINER_CONFIG /opt/bpm-bpmsuite/config
+ENV START_LOG_FILE=/tmp/start-eap.log
 
 # BPM Suite 6.1 zip file
 ENV BPM_ZIP jboss-bpmsuite-6.1.0.GA-deployable-eap6.x.zip
 ENV BPM_ZIP_PATH /resources/$BPM_ZIP
 
 # Default values for database connection variables
+ENV DEFAULT_DIALECT=org.hibernate.dialect.H2Dialect
+ENV DIALECT=org.hibernate.dialect.H2Dialect
 ENV BPMS_CONNECTION_URL "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
 ENV BPMS_CONNECTION_DRIVER h2
 ENV BPMS_CONNECTION_USER sa
-# TODO: Docker best practices - Do not use passwords here 
 ENV BPMS_CONNECTION_PASSWORD sa
 
 # Cluster related envs
@@ -36,56 +38,23 @@ ENV BPMS_QUARTZ_PROPERTIES $CONTAINER_CONFIG/quartz-db.properties
 ENV BPMS_CLUSTER_PASSWORD bpmsclustering
 ENV BPMS_CLUSTER_NODE 1
 ENV HELIX_VERSION 0.6.3
-ENV HELIX_HOME /opt/jboss/helix
-
+ENV HELIX_HOME /opt/eap/helix
 
 #######  Layer BPM Suite 6 on EAP ####
 ADD ./resources /resources
-RUN unzip -o $BPM_ZIP_PATH -d /tmp/ && \
-    cp -r /tmp/jboss-eap-6.3/* $JBOSS_HOME && \
-    rm -rf /tmp/jboss-eap-6.3
+RUN unzip -o $BPM_ZIP_PATH -d $JBOSS_HOME && \
+    rm -rf $BPM_ZIP_PATH
 RUN mkdir -p $CONTAINER_CONFIG/index $CONTAINER_CONFIG/vfs
 
-####### CUSTOM JBOSS USER ############
-# Switchback to jboss user
-USER jboss 
-
-####### HELIX ############
-RUN curl --silent --output /opt/jboss/helix.tar http://ftp.cixug.es/apache/helix/$HELIX_VERSION/binaries/helix-core-$HELIX_VERSION-pkg.tar; \ 
-tar -xvf helix.tar; \ 
-mv helix-core-$HELIX_VERSION helix; \ 
-rm helix.tar
-
-
-####### BPMS CUSTOM CONFIGURATION ############
-# There is an issue in Docker with ADD command.
-# When a file is added into the container's filesystem, the file owner is always root, instead of the current running user.
-# See https://github.com/docker/docker/issues/5110
-# The workaround is doing a chown using root user and then switchback to jboss user.
-ADD etc/modules $CONTAINER_CONFIG/modules
-ADD etc/bpms-users.properties $JBOSS_HOME/standalone/configuration/bpms-users.properties
-ADD etc/bpms-roles.properties $JBOSS_HOME/standalone/configuration/bpms-roles.properties
-ADD etc/mgmt-users.properties $JBOSS_HOME/standalone/configuration/mgmt-users.properties
-ADD etc/standalone-full-ha.xml.template $JBOSS_HOME/standalone/configuration/standalone-full-ha.xml.template
-ADD etc/persistence.xml.template $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
-ADD etc/start-bpms.sh $CONTAINER_CONFIG/start-bpms.sh
-ADD etc/quartz-db.properties $CONTAINER_CONFIG/quartz-db.properties
-ADD etc/use_remote_hq_broker.cli $CONTAINER_CONFIG/use_remote_hq_broker.cli
-USER root
-RUN chown -R jboss:jboss $JBOSS_HOME
+ADD ./config $CONTAINER_CONFIG
 RUN chown -R jboss:jboss $CONTAINER_CONFIG
 
-# Assign a shell to jboss user so as to allow switching to this user
-RUN usermod -s /bin/bash jboss
 
-# Add the executable flag.
-RUN chmod +x $CONTAINER_CONFIG/start-bpms.sh
+####### HELIX ############
+RUN curl --silent --output /tmp/helix.tar http://ftp.cixug.es/apache/helix/$HELIX_VERSION/binaries/helix-core-$HELIX_VERSION-pkg.tar; \ 
+tar -xvf /tmp/helix.tar -C $JBOSS_HOME; \ 
+ln -s  $JBOSS_HOME/helix-core-$HELIX_VERSION $JBOSS_HOME/helix; \
+rm /tmp/helix.tar
 
-# Expose CLI as well as BPMS git & ssh ports
-EXPOSE 9999 9520 9521
-
-# Switchback to jboss user
 USER jboss
-
-####### RUNNING BPMS ############
-CMD ["/opt/jboss/bpms/start-bpms.sh"]
+CMD ["/opt/bpm-bpmsuite/config/start-bpms.sh"]
