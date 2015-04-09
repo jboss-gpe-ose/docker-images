@@ -1,1 +1,0 @@
-Place here configuration your binaries to use in the docker image

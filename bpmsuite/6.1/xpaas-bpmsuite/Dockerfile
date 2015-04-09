@@ -5,10 +5,9 @@ MAINTAINER "JBoss XPaaS Team" "xpass-eng@redhat.com"
 
 ####### RDBMS DRIVERS ############
 USER root
-RUN yum install -y postgresql-jdbc mysql-connector-java
+RUN yum install -y postgresql-jdbc mysql-connector-java iproute && yum clean all -y
 
-
-ENV CONTAINER_CONFIG /opt/jboss/bpms
+ENV CONTAINER_CONFIG /opt//bpms
 
 
 # BPM Suite 6.1 zip file
