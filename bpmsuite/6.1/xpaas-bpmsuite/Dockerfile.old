@@ -1,4 +1,14 @@
-FROM ce-registry.usersys.redhat.com/jboss-eap6/eap:6.4
+############################################################
+# Dockerfile to build xpaas-bpmsuite image including:
+# - OpenJDK 1.7.0
+# - JBoss EAP 6.3.1
+# - JBoss BPMS 6.1.0.DR4-redhat3
+# Version: 6.1
+############################################################
+
+####### BASE ############
+#FROM docker-registry.usersys.redhat.com/goldmann/jboss-bpms:6.1
+FROM jboss-eap:6.3
 
 ####### MAINTAINER ############
 MAINTAINER "JBoss XPaaS Team" "xpass-eng@redhat.com"
@@ -8,12 +18,16 @@ USER root
 RUN yum install -y postgresql-jdbc mysql-connector-java
 
 
+#ENV JBOSS_HOME /opt/jboss/eap
 ENV CONTAINER_CONFIG /opt/jboss/bpms
 
 
 # BPM Suite 6.1 zip file
 ENV BPM_ZIP jboss-bpmsuite-6.1.0.GA-deployable-eap6.x.zip
 ENV BPM_ZIP_PATH /resources/$BPM_ZIP
+
+# JBoss EAP configuration variables
+# ENV JBOSS_BIND_ADDRESS 127.0.0.1 // Not set. By default uses the runnig docker container's ip address.
 
 # Default values for database connection variables
 ENV BPMS_CONNECTION_URL "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
@@ -42,9 +56,9 @@ ENV HELIX_HOME /opt/jboss/helix
 
 #######  Layer BPM Suite 6 on EAP ####
 ADD ./resources /resources
-RUN unzip -o $BPM_ZIP_PATH -d /tmp/ && \
-    cp -r /tmp/jboss-eap-6.3/* $JBOSS_HOME && \
-    rm -rf /tmp/jboss-eap-6.3
+RUN unzip -o $BPM_ZIP_PATH -d /tmp/
+RUN cp -r /tmp/jboss-eap-6.3/* $JBOSS_HOME
+RUN rm -rf /tmp/jboss-eap-6.3
 RUN mkdir -p $CONTAINER_CONFIG/index $CONTAINER_CONFIG/vfs
 
 ####### CUSTOM JBOSS USER ############
@@ -64,10 +78,10 @@ rm helix.tar
 # See https://github.com/docker/docker/issues/5110
 # The workaround is doing a chown using root user and then switchback to jboss user.
 ADD etc/modules $CONTAINER_CONFIG/modules
+ADD etc/standalone-full-ha.xml.template $JBOSS_HOME/standalone/configuration/standalone-full-ha.xml.template
 ADD etc/bpms-users.properties $JBOSS_HOME/standalone/configuration/bpms-users.properties
 ADD etc/bpms-roles.properties $JBOSS_HOME/standalone/configuration/bpms-roles.properties
 ADD etc/mgmt-users.properties $JBOSS_HOME/standalone/configuration/mgmt-users.properties
-ADD etc/standalone-full-ha.xml.template $JBOSS_HOME/standalone/configuration/standalone-full-ha.xml.template
 ADD etc/persistence.xml.template $JBOSS_HOME/standalone/deployments/business-central.war/WEB-INF/classes/META-INF/persistence.xml.template
 ADD etc/start-bpms.sh $CONTAINER_CONFIG/start-bpms.sh
 ADD etc/quartz-db.properties $CONTAINER_CONFIG/quartz-db.properties

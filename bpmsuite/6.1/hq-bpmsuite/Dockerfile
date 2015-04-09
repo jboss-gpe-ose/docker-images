@@ -1,53 +1,37 @@
-#FROM docker-registry.usersys.redhat.com/goldmann/jboss-eap:6.3
-FROM jboss-eap:6.3
-
-USER root
+FROM ce-registry.usersys.redhat.com/jboss-eap6/eap:6.4
 
 # Perform updates
 RUN yum -y update; yum clean all
 
-# Pull supervisor package from EPEL
-RUN rpm -ivh http://mirror.symnds.com/distributions/fedora-epel/7/x86_64/e/epel-release-7-5.noarch.rpm
-RUN yum install --enablerepo=rhel-7-server-rpms -y supervisor
-RUN rpm -e epel-release
-
-# Install supervisor
-RUN yum -y install supervisor; yum clean all
-
-# Create directories for supervisor and configuration
-RUN mkdir -p /var/run/supervisord
-RUN mkdir -p /opt/hq-bpmsuite/config
+ENV CONTAINER_CONFIG /opt/hq-bpmsuite/config
+RUN mkdir -p $CONTAINER_CONFIG
 
 # Add scripts
-ADD ./configure-eap.sh /opt/hq-bpmsuite/config/configure-eap.sh
-ADD ./create-queues.sh /opt/hq-bpmsuite/config/create-queues.sh
-ADD ./env.sh /opt/hq-bpmsuite/config/env.sh
-ADD ./copy-env.sh /opt/hq-bpmsuite/config/copy-env.sh
-ADD ./start-container.sh /opt/hq-bpmsuite/config/start-container.sh
-ADD ./start-eap.sh /opt/hq-bpmsuite/config/start-eap.sh
-ADD ./stop-eap.sh /opt/hq-bpmsuite/config/stop-eap.sh
-ADD ./configure-hornetq.cli /opt/hq-bpmsuite/config/configure-hornetq.cli
-ADD ./create-queues.cli /opt/hq-bpmsuite/config/create-queues.cli
-ADD ./configure-jgroups.cli /opt/hq-bpmsuite/config/configure-jgroups.cli
-ADD ./configure-eap.cli /opt/hq-bpmsuite/config/configure-eap.cli
-ADD ./supervisord.conf /etc/supervisord.conf
-
-ADD ./mgmt-users.properties /opt/jboss/eap/standalone/configuration/mgmt-users.properties
+ADD ./config/env.sh $CONTAINER_CONFIG/env.sh
+ADD ./config/copy-env.sh $CONTAINER_CONFIG/copy-env.sh
+ADD ./config/start-eap.sh $CONTAINER_CONFIG/start-eap.sh
+ADD ./config/configure-hornetq.cli $CONTAINER_CONFIG/configure-hornetq.cli
+ADD ./config/create-queues.cli $CONTAINER_CONFIG/create-queues.cli
+ADD ./config/configure-jgroups.cli $CONTAINER_CONFIG/configure-jgroups.cli
+ADD ./config/mgmt-users.properties /opt/jboss/eap/standalone/configuration/mgmt-users.properties
 
 # Set script permissions
-RUN chmod 755 /opt/hq-bpmsuite/config/*
+RUN chmod 755 $CONTAINER_CONFIG/*
+
+# start eap in admin-only mode
+USER jboss
+RUN $JBOSS_HOME/bin/standalone.sh --server-config=standalone.xml --admin-only & \
+    sleep 15s &&\
+    $JBOSS_HOME/bin/jboss-cli.sh --connect --file=$CONTAINER_CONFIG/configure-queues.cli
 
 # Configure EAP
-RUN /opt/hq-bpmsuite/config/configure-eap.sh
+RUN $CONTAINER_CONFIG/configure-eap.sh
 
 # Create Queues
-RUN /opt/hq-bpmsuite/config/create-queues.sh
-
-# Assign a shell to jboss user so as to allow switching to this user
-RUN usermod -s /bin/bash jboss
+RUN $CONTAINER_CONFIG/create-queues.sh
 
 # Expose port 8080,9990,9999,5445,5455
 EXPOSE 8080 9990 9999 5445 5455
 
 # Entrypoint
-ENTRYPOINT ["/bin/bash", "/opt/hq-bpmsuite/config/start-container.sh"]
+ENTRYPOINT ["/bin/bash", "$CONTAINER_CONFIG/start-eap.sh"]

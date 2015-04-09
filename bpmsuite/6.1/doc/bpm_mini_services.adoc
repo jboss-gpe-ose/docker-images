@@ -176,7 +176,7 @@ NOTE: For the purposes of this documentation, the following directory path will 
 
 === Download BPM Suite 6 Engineering Release
 
-. If you are partner of Red Hat, please contact us to gain access to the latest engineering releaes of BPM Suite 6.1 .
+. If you are partner of Red Hat, please contact us to gain access to the latest engineering releases of BPM Suite 6.1 .
 . Once downloaded, move the BPM Suite 6.1 ER zip file to $BPM_DOCKER/xpaas-bpmsuite/resources
 
 === Build the images

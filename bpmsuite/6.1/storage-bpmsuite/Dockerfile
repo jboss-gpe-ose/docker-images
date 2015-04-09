@@ -1,7 +1,7 @@
-FROM rhel7
+FROM docker-registry.usersys.redhat.com/brew/rhel7:1
 
 # Perform updates
-RUN yum -y update; yum clean all
+RUN yum -y update && yum clean all
 
 # Create user jboss (with Ids that match that of jboss user created in:  docker-registry.usersys.redhat.com/goldmann/jboss-eap:6.3)
 RUN groupadd -r jboss -g 1000 && useradd -u 1000 -r -g jboss -d /opt/jboss -s /bin/bash -c "JBoss user" jboss
