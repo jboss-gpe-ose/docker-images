@@ -7,7 +7,7 @@
 # Program arguments
 #
 # -c | --container-name:    The name for the created container.
-#                           If not specified, defaults to "xpaas-bpmsuite"
+#                           If not specified, defaults to "bpm-bpmsuite"
 # -d | --connection-driver: The BPMS database connection driver 
 #                           If not specified, defaults to "h2!"
 # -url | --connection-url:  The BPMS database connection URL 
@@ -20,8 +20,8 @@
 # -h | --help;              Show the script usage
 #
 
-CONTAINER_NAME="xpaas-bpmsuite"
-IMAGE_NAME="redhat/xpaas-bpmsuite"
+CONTAINER_NAME="bpm-bpmsuite"
+IMAGE_NAME=$CONTAINER_NAME
 IMAGE_TAG="latest"
 CONNECTION_DRIVER=h2
 CONNECTION_URL="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"

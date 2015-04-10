@@ -9,7 +9,16 @@ USER root
 RUN yum install -y postgresql-jdbc mysql-connector-java iproute && yum clean all -y
 
 ENV CONTAINER_CONFIG /opt/bpm-bpmsuite/config
+ENV JBOSS_CONFIG standalone-full-ha.xml
+ENV JBOSS_NAME jboss-eap-6.4
 ENV START_LOG_FILE=/tmp/start-eap.log
+ENV BPMS_GIT_PORT 9520
+ENV BPMS_GIT_DIR /opt/shared/bpm//vfs
+ENV BPMS_SSH_PORT 9521
+ENV BPMS_INDEX_DIR /opt/shared/bpm/index
+ENV BPMS_QUARTZ_PROPERTIES $CONTAINER_CONFIG/quartz-db.properties
+# ENV BPMS_GIT_HOST // Set by default to the container's ip address
+# ENV BPMS_SSH_HOST // Set by default to the container's ip address
 
 # BPM Suite 6.1 zip file
 ENV BPM_ZIP jboss-bpmsuite-6.1.0.GA-deployable-eap6.x.zip
@@ -27,27 +36,18 @@ ENV BPMS_CONNECTION_PASSWORD sa
 # ENV BPMS_CLUSTER_NAME // Not set by default
 # ENV BPMS_ZOOKEEPER_SERVER // Not set by default
 ENV BPMS_VFS_LOCK bpms-vfs-lock
-# ENV BPMS_GIT_HOST // Set by default to the container's ip address
-ENV BPMS_GIT_PORT 9520
-ENV BPMS_GIT_DIR $CONTAINER_CONFIG/vfs
-# ENV BPMS_SSH_HOST // Set by default to the container's ip address
-ENV BPMS_SSH_PORT 9521
-ENV BPMS_INDEX_DIR $CONTAINER_CONFIG/index
-ENV BPMS_QUARTZ_PROPERTIES $CONTAINER_CONFIG/quartz-db.properties
-# TODO: Docker best practices - Do not use passwords here
-ENV BPMS_CLUSTER_PASSWORD bpmsclustering
 ENV BPMS_CLUSTER_NODE 1
 ENV HELIX_VERSION 0.6.3
 ENV HELIX_HOME /opt/eap/helix
 
 #######  Layer BPM Suite 6 on EAP ####
 ADD ./resources /resources
-RUN unzip -o $BPM_ZIP_PATH -d $JBOSS_HOME && \
-    rm -rf $BPM_ZIP_PATH
-RUN mkdir -p $CONTAINER_CONFIG/index $CONTAINER_CONFIG/vfs
+RUN unzip -o $BPM_ZIP_PATH -d /tmp/ && \
+    cp -rf /tmp/$JBOSS_NAME/* $JBOSS_HOME && \
+    rm -rf $BPM_ZIP_PATH && \
+    rm -rf /tmp/$JBOSS_NAME
 
 ADD ./config $CONTAINER_CONFIG
-RUN chown -R jboss:jboss $CONTAINER_CONFIG
 
 
 ####### HELIX ############
@@ -55,6 +55,11 @@ RUN curl --silent --output /tmp/helix.tar http://ftp.cixug.es/apache/helix/$HELI
 tar -xvf /tmp/helix.tar -C $JBOSS_HOME; \ 
 ln -s  $JBOSS_HOME/helix-core-$HELIX_VERSION $JBOSS_HOME/helix; \
 rm /tmp/helix.tar
+
+RUN $JBOSS_HOME/bin/standalone.sh --server-config=$JBOSS_CONFIG --admin-only & \
+    sleep 15s && \
+    $JBOSS_HOME/bin/jboss-cli.sh --connect --file=$CONTAINER_CONFIG/configure-eap.cli
+RUN chown -R jboss:jboss /opt
 
 USER jboss
 CMD ["/opt/bpm-bpmsuite/config/start-bpms.sh"]

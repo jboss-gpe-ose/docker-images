@@ -257,11 +257,10 @@ docker run -d --name="mysql-bpmsuite" mysql-bpmsuite
 nsenter -m -u -n -i -p -t  `docker inspect --format '{{ .State.Pid }}' mysql-bpmsuite` /bin/bash
 -----
 
-. get the ip address of the `mysql-bpmsuite` container
+. get the ip address of the `mysql-bpmsuite` container and remotely log into the database
 +
 -----
-docker inspect mysql-bpmsuite | grep IPAddress | cut -d '"' -f 4
-172.17.0.20
+mysql -u jbpm -p jbpm -h `docker inspect mysql-bpmsuite | grep IPAddress | cut -d '"' -f 4`
 -----
 
 === xpaas_bpmsuite

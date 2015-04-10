@@ -59,10 +59,10 @@
 
     <!-- XPAAS BPMSUITE - CUSTOM PROPERTIES FOR CLUSTERING -->
     %CLUSTER_PROPERTIES_START%
-    <property name="org.uberfire.cluster.id" value="${jboss.bpms.cluster.id}"/>
-    <property name="org.uberfire.cluster.zk" value="${jboss.bpms.cluster.zk}"/>
-    <property name="org.uberfire.cluster.local.id" value="${jboss.bpms.cluster.node}"/>
-    <property name="org.uberfire.cluster.vfs.lock" value="${jboss.bpms.vfs.lock}"/>
+    <property name="org.uberfire.cluster.id" value="${org.uberfire.cluster.id}"/>
+    <property name="org.uberfire.cluster.zk" value="${org.uberfire.cluster.zk}"/>
+    <property name="org.uberfire.cluster.local.id" value="${org.uberfire.cluster.local.id}"/>
+    <property name="org.uberfire.cluster.vfs.lock" value="${org.uberfire.cluster.vfs.lock}"/>
     <property name="org.uberfire.cluster.autostart" value="false"/>
     <property name="org.quartz.properties" value="${jboss.bpms.quartz.properties}"/>
     %CLUSTER_PROPERTIES_END%

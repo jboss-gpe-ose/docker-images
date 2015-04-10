@@ -19,8 +19,7 @@ RUN mkdir -p $CONTAINER_CONFIG
 # Add scripts
 ADD ./config $CONTAINER_CONFIG
 
-# Set script permissions and configure EAP
-RUN chmod 755 $CONTAINER_CONFIG/*
+# Configure EAP
 RUN $CONTAINER_CONFIG/configure-eap.sh
 RUN chown -R jboss:jboss /opt
 
